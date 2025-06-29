@@ -1,5 +1,51 @@
 ---
-title: "Untitled"
-format: html
+title: "Factorisation de Bunch-Parlett et Bunch-Kaufman"
+subtitle: "MTH8211 - Projet phase 1"
+author:
+  - name: Hortense Beaudoin et Téo Dumoutier
+    email: hortense.beaudoin@polymtl.ca
+    affiliation:
+      - name: Polytechnique Montréal
+format:
+  pdf:
+    keep-tex: false
+    documentclass: article
+    include-in-header:
+      - text: |
+            \usepackage{xspace}
+            \usepackage[francais]{babel}
+    geometry:
+      - margin=1in
+    papersize: letter
+    colorlinks: true
+    urlcolor: blue
+engine: julia
 ---
 
+# Description du projet
+
+Description de la problématique.
+
+# Objectifs
+
+Les objectifs principaux du projet pour débuter sont tels que donné dans l'énoncé du projet;
+
+1. Comprendre et documenter les factorisations de Bunch-Parlett et Bunch-Kaufman (pivotage complet et pivotage partiel.) Fournir des exemples, des schémas explicatifs, faire des liens avec les éléments vus en classe.
+
+2. Implémenter ces deux factorisation ainsi que l'alternative du \textit{rook pivoting}. Les comparer et identifier leurs avantages et leurs inconvénients respectifs.
+
+3. Comparer nos implémentations à celles déjà disponibles dans Julia et tenter d'identifier les sources possibles des différences observées.
+    
+4. Joindre la factorisation à des méthodes de résolution de systèmes linéaires. 
+
+5. Appliquer l'implémentation à un ensemble de problèmes modèles ainsi qu'à un problème plus spécifique au choix. 
+
+** Reprendre la liste, élaborer un peu sur ce qu'on pense obtenir dans chaque cas ou vérifier
+
+# Plan d'action
+
+Échéancier préliminaire + sources de données ? 
+
+# Impact attendu
+
+Impact attendu ; je suppose qu'il s'attend à ce qu'on parle du type de problème qui peuvent être résolus avec cet algorithme, optimisation ? Champ d'application ? Pertinence de l'implémentation en Julia, de l'optimisation du code ? 
