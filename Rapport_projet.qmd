@@ -3,7 +3,7 @@ title: "Factorisation de Bunch-Parlett et Bunch-Kaufman"
 subtitle: "MTH8211 - Projet phase 1"
 author:
   - name: Hortense Beaudoin et Téo Dumoutier
-    email: hortense.beaudoin@polymtl.ca
+    email: hortense.beaudoin@polymtl.ca et teo.dumoutier@polymtl.ca
     affiliation:
       - name: Polytechnique Montréal
 format:
@@ -14,6 +14,8 @@ format:
       - text: |
             \usepackage{xspace}
             \usepackage[francais]{babel}
+            \usepackage{fvextra}
+            \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
     geometry:
       - margin=1in
     papersize: letter
@@ -44,8 +46,20 @@ Les objectifs principaux du projet pour débuter sont tels que donné dans l'én
 
 # Plan d'action
 
-Échéancier préliminaire + sources de données ? 
+<!-- Échéancier préliminaire + sources de données ?  -->
+
+1. Une revue de littérature sera effectuée afin de cerner précisément l'essence de la factorisation de Bunch-Parlett et de Bunch-Kaufman et de comprendre leurs différences, leurs implications, ainsi que leurs stratégies d'implémentation. Il est attendu que le chapitre 11 du manuel `Accuracy and Stability of Numerical Algorithms` de Nicholas J. Higham soit la référence principale quant à cela.
+
+2. Une implémentation de ces deux factorisations sera mise en place. Elle sera validée à l'aide d'exemples aléatoires de divers types (nombres complexes, BigFloat, etc.) et optimisée en évaluant les performances à l'aide du module Benchmark de Julia (nombre d'allocations, temps d'exécution, etc.). Il est attendu que la documentation du module `Benchmark` de Julia se révèle très utile pour savoir comment l'exploiter au maximum afin d'effectuer une analyse de performance complète.
+
+3. La stratégie du "rook pivoting" sera implémentée comme alternative à celle du pivotage complet et partiel. Celle-ci sera validée et optimisée en utilisant les mêmes techniques que précédemment. Ses avantages et inconvénients seront documentés selon les connaissances existantes par rapport à cela dans la littérature, ainsi que selon les observations expérimentales faites au cours de l'implémentation. Ceux-ci seront caractérisés et illustrés à l'aide d'exemples permettant de comparer ces diverses stratégies et d'identifier les différences de performance selon le cas. Encore une fois, il est attendu que le chapitre 11 du manuel `Accuracy and Stability of Numerical Algorithms` de Nicholas J. Higham soit une référence importante pour documenter les avantages et les inconvénients de ces diverses stratégies, et que la documentation du module `Benchmark` soit utile à l'analyse de performance.
+
+4. Le tout sera formalisé afin de pouvoir être utilisé dans la résolution de systèmes linéaires en concordance avec les normes établies en Julia. Il est attendu que la documentation du module `Linear Algebra`, qui détaille ces normes, soit une référence importante afin de déterminer cedit formalisme.
+
+5. L'implémentation formalisée sera testée sur des problèmes d'optimisation quadratique divers, en évaluant les résultats et la performance. Cette évaluation sera faite par comparaison à l'implémentation de la librairie LAPACK utilisée conventionnellement en Julia. Les observations faites seront sujets de discussion afin établir les conclusions du projet. Il est attendu que la documentation de Julia et de la librairie LAPACK se révèle utile afin de comprendre les différences entre les implémentations et ainsi les différences entre les observations, de sorte à étoffer l'analyse et ses conclusions.
 
 # Impact attendu
 
-Impact attendu ; je suppose qu'il s'attend à ce qu'on parle du type de problème qui peuvent être résolus avec cet algorithme, optimisation ? Champ d'application ? Pertinence de l'implémentation en Julia, de l'optimisation du code ? 
+<!-- Impact attendu ; je suppose qu'il s'attend à ce qu'on parle du type de problème qui peuvent être résolus avec cet algorithme, optimisation ? Champ d'application ? Pertinence de l'implémentation en Julia, de l'optimisation du code ?  -->
+
+Pour tout problème, il est avantageux d'exploiter la structure de ce dernier ainsi que ses symétries afin d'optimiser sa résolution. Par exemple, dans le cas d'un système linéaire $Ax = b$ dans lequel la matrice A est définie positive, la factorisation de Cholesky est utilisée à la place de l'élimination de Gauss afin d'exploiter la propriété de définie positivité pour améliorer la performance de la résolution. De la même façon, dans le cas d'un système linéaire $Ax = b$ où la matrice est hermitienne, mais pas nécessairement définie positive, ce sont les factorisations implémentées ici qui permettent d'exploiter cela afin d'améliorer la performance de la résolution. De nombreux problèmes comportent des matrices hermitiennes indéfinies, tels que des problèmes aux moindres carrés, des problèmes d'optimisation, la résolution numérique des équations de Navier-Stokes pour fluide incompressible et même la récupération des informations contenues dans divers opérateurs en physique quantique comme l'hamiltonien par exemple. L'implémentation présente est donc très utile pour tous ces types de problèmes, en notant qu'en plus leur structure possède la propriété d'améliorer la stabilité numérique des opérations de résolution. Il est donc attendu que la performance (nombre d'allocations, temps d'exécution, etc.) et la stabilité numérique des problèmes à matrice hermitienne résolus grâce à cette factorisation soient bien meilleures que lorsqu'ils sont résolus avec une méthode plus générale, mais qui n'exploite pas la propriété qu'a la matrice d'être hermitienne. 
