@@ -14,6 +14,7 @@ format:
       - text: |
             \usepackage{xspace}
             \usepackage[francais]{babel}
+            \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
     geometry:
       - margin=1in
     papersize: letter
@@ -73,15 +74,14 @@ Et ainsi de suite. Les matrices $P$, $L$ et $B$ sont construites de la façon su
 $$P_{k+1} = P_{k+1}P_{k}\dots P_1$$
 $$L_{k+1} = \begin{bmatrix}I_{s_k}  0 & 0 \\ (C_kE_k^{-1})_{s_{k+1}} & s_{k+1} & 0 \\ (C_kE_k^{-1})_{n-(s_k+s_{k+1})} & C_{k+1}E_{k+1}^{-1} & I_{n-(s_k+s_{k+1})}\end{bmatrix}$$$$B_{k+1} = \begin{bmatrix}E_k & 0 & 0 \\ 0 & E_{k+1} & 0 \\ 0 & 0 & S_{k+1}\end{bmatrix}$$
 
-La différence entre les processus de Bunch-Parlett et Bunch-Kaufman reposent dans le choix du pivot, soit de la permutation $p_k$. Le tout sera exploré plus en détail dans ce projet. 
+La différence entre les processus de Bunch-Parlett et Bunch-Kaufman repose dans le choix du pivot, soit de la permutation $p_k$. Le tout sera exploré plus en détail dans ce projet. 
 
 # Objectifs
 
 Les objectifs principaux du projet, pour débuter, sont tels que donné dans l'énoncé;
 
 1. Comprendre et documenter les factorisations de Bunch-Parlett et Bunch-Kaufman (pivotage complet et pivotage partiel.) Fournir des exemples, des schémas explicatifs, faire des liens avec les éléments vus en classe.
-  - Compréhension de base amorcée ci-dessus.
-  - Le pseudo-code sera intéressant pour décrire les algorithmes à implémenter en Julia et comprendre les processus. 
+  - Voir section description et sections x et x. 
 
 2. Implémenter ces deux factorisation ainsi que l'alternative du *rook pivoting*. Les comparer et identifier leurs avantages et leurs inconvénients respectifs. 
   - Pour le pivotage complet, on s'attend à au plus $n^3/6$ comparaisons pour le choix de $p$.
@@ -98,25 +98,78 @@ Les objectifs principaux du projet, pour débuter, sont tels que donné dans l'�
 5. Appliquer l'implémentation à un ensemble de problèmes modèles ainsi qu'à un problème plus spécifique au choix.
   - Nous savons que Julia possède des Packages dédiés à l'optimisation et des 'lots' de problèmes d'optimisation de base, qui peuvent être utiles pour faire du Benchmarking et comparer différentes approches. Nous verrons si ces éléments peuvent servir dans notre cas ou pas. 
 
-# Plan d'action
+# Implémentation des factorisations
 
-1. Une revue de littérature sera effectuée afin de cerner l'essence de la factorisation de Bunch-Parlett et de Bunch-Kaufman et de comprendre leurs différences, leurs implications, ainsi que leurs stratégies d'implémentation. Il est attendu que le chapitre 11 du manuel *Accuracy and Stability of Numerical Algorithms* de Nicholas J. Higham soit la référence principale.
+## Bunch-Parlett
+La stratégie de Bunch-Parlett pour le choix du pivot est aussi appelé *pivotage complet*. Elle se base sur les valeurs maximales des entrées de la matrice sur et hors diagonal. Le choix du pivot est effectué comme suit;
 
-2. Une implémentation de ces deux factorisations sera mise en place. Elle sera validée à l'aide d'exemples aléatoires de divers types (nombres complexes, BigFloat, etc.) et optimisée en évaluant les performances à l'aide du module Benchmark de Julia (nombre d'allocations, temps d'exécution, etc.). Il est attendu que la documentation du module *Benchmark* de Julia se révèle utile pour savoir comment l'exploiter au maximum afin d'effectuer une analyse de performance complète.
+  poser   $\alpha = (1+ \sqrt{17})/8$
+  poser   $\mu_0 = \max_{i,j}|a_{ij}| =: |a_{pq}|,\;(q\ge p)$
+          $\mu_1 = \max_{i}|a_{ii}| =: |a_{rr}|$
 
-3. La stratégie du *rook pivoting* sera implémentée comme alternative à celle du pivotage complet et partiel. Celle-ci sera validée et optimisée en utilisant les mêmes techniques que précédemment. Ses avantages et inconvénients seront documentés selon les connaissances existantes dans la littérature, ainsi que selon les observations expérimentales faites au cours de l'implémentation. Ceux-ci seront caractérisés et illustrés à l'aide d'exemples permettant de comparer ces diverses stratégies et d'identifier les différences de performance selon le cas. Encore une fois, il est attendu que le chapitre 11 du manuel *Accuracy and Stability of Numerical Algorithms* de Nicholas J. Higham soit la référence principale pour documenter les avantages et les inconvénients de ces diverses stratégies et que la documentation du module *Benchmark* soit utile à l'analyse de performance.
+  si $\mu_1\ge \alpha\mu_0$
 
-4. Le tout sera formalisé afin de pouvoir être utilisé dans la résolution de systèmes linéaires en concordance avec les normes établies en Julia. Il est attendu que la documentation du module *Linear Algebra*, qui détaille ces normes, soit la référence principale afin de déterminer cedit formalisme. On note qu'il sera nécessaire de déterminer comment utiliser les informations de cette factorisation dans le cadre de la résolution d'un système linéaire. Ceci pourrait se décliner dans les cas de résolution directe (effectuer la factorisation complète, puis s'en servir pour résoudre le système) ou itérative (effectuer progressivement la factorisation en approximant une solution de plus en plus précise au fur et à mesure). Une revue de littérature exhaustive sera faite quant à cela afin de couvrir toutes les implémentations possibles.
+  Utiliser $a_{rr}$ comme pivot $1\times 1$ ($s=1$, les colonnes et rangées $k$ et $r$ sont permutées)
 
-5. L'implémentation formalisée sera testée sur des problèmes d'optimisation quadratique divers, en évaluant les résultats et la performance. Cette évaluation sera faite par comparaison à l'implémentation de la librairie LAPACK utilisée conventionnellement en Julia. Il est attendu que la documentation de Julia et de la librairie LAPACK se révèlent utiles afin de comprendre les différences entre les implémentations et ainsi les différences entre les observations, de sorte à étoffer l'analyse et ses conclusions. On prévoit que les problèmes aux moindres carrés dans lesquels $A$ est définie positive et de rang maximal soient un cas d'étude important, car leurs équations normales peuvent être transformées en un système de point de selle symétrique. Ces systèmes ont exactement la forme qui nous intéresse. Par ailleurs, la résolution pourra même être comparée à une résolution directe de LAPACK par factorisation QR ou encore à une résolution itérative avec LSQR, puisque ce sont des problèmes aux moindres carrés, et ce en plus de la comparaison avec une résolution LAPACK qui utilise les même factorisations que celles qui seront implémentées.
+  sinon
 
-# Échéancier préliminaire
+  Utiliser $\begin{bmatrix} a_{pp} & a_{qp} \\ a_{qp} & a_{qq} \end{bmatrix}$ comme pivot $2\times 2$ ($s=2$, les colonnes et rangées $k$ et $p$ sont permutées, suivies des colonnes et rangées $k+1$ et $q$)
+  
+Paragraphe sur la justification du choix de $\alpha$ À ÉCRIRE.
+
+Pour l'implémentation, on combine ce choix de $p$ à la mise en place de base du problème, vue dans la première section du rapport. Le pseudo-code suivant est ce qui a été suivi pour l'implémentation. 
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\SetAlgoLined
+\KwResult{$PAP^T = LBL^T$}
+\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+\Input{A symmétrique indéfinie}
+\Output{P, L, B}
+\BlankLine
+\While{$k \le n$}{
+    $\alpha = (1+ \sqrt{17})/8$ \;
+    $\mu_1 = \max_i |a_{ii}| := |a_{rr}|$ \;
+    $\mu_0 = \max_{ij} |a_{ij}| := |a_{pq}|$ \;
+    \eIf{$\mu \ge \alpha\mu_0$}{
+        $a_{rr}$ est le pivot $1\times 1$, $s=1$ \;
+        Permuter les lignes et colonnes $k$ et $r$ dans $A$ \;
+        Permuter les entrées $k$ et $r$ dans $P$ \;
+        Mettre à jour $B$ avec $A[k,k]$ \;
+        Mettre à jour $L$ avec $C_k/A[k,k]$ \;
+        Mettre à jour le bloc inférieur droit de $A$ avec $D_k-C_kA[k,k]C_k^T$ \;
+        $k+=1$ \;
+    }{
+        $a_{pq}$ est le pivot $2\times 2$, $s=2$\;
+        Permuter les lignes et colonnes $k$ et $p$ dans $A$ \;
+        Permuter les lignes et colonnes $k+1$ et $q$ dans $A$ \;
+        Permuter les entrées $k$ et $p$ dans $P$ \;
+        Permuter les entrées $k+1$ et $q$ dans $P$ \;
+        Extraire $E$ de $A$ \;
+        Mettre à jour $B$ avec $E$ \;
+        Inverser $E$ \;
+        Mettre à jour $L$ avec $C_kE^{-1}$ \;
+        Mettre à jour le bloc inférieur droit de $A$ avec $D_k-C_kA[k,k]C_k^T$ \;
+        $k+=2$ \;
+    }
+}
+\caption{Factorisation de Bunch-Parlett (pivotage complet)}
+\end{algorithm}
+
+La fonction suivante est notre implémentation optimisée (À FAIRE/VOIR) de la factorisation de Bunch-Parlett. 
+
+```{julia}
+{{< include lbl_complete_pivoting.jl >}}
+```
+
+
+## Bunch-Kaufman
+
+# Difficultés rencontrées
+
+# Échéancier à jour
 
 Sur le temps total du projet ($\sim$ 20h), 15% du temps est prévu être alloué à l'étape 1, 50% à l'étape 2 et 3 qui peuvent être faites en parallèle, puisque diverses stratégies sont implémentées, 20% à l'étape 4 et 15% à l'étape 5. En effet, une portion de temps significative doit être allouée à la revue de littérature afin d'acquérir une compréhension solide sur laquelle construire le projet. De plus, il est attendu que la validation et l'optimisation de performance, qui sont des aspects importants des étapes 2 et 3, en plus de l'implémentation en tant que telle, représente un défi majeur afin d'obtenir des implémentations optimisées. Une grande portion du temps  doit donc être allouée à ces étapes. Les recherches pour intégrer ces factorisations dans les différentes méthodes de résolution de système linéaire sera probablement le deuxième défi le plus important, suivi par la création de problèmes de tests robustes et adaptés. Ainsi, un peu plus du temps restant est alloué à l'étape 4 qu'à l'étape 5.
-
-# Impact attendu
-
-Pour tout problème, il est avantageux d'exploiter la structure de ce dernier ainsi que ses symétries afin d'optimiser sa résolution. Par exemple, dans le cas d'un système linéaire $Ax = b$ dans lequel la matrice A est définie positive, la factorisation de Cholesky est utilisée à la place de l'élimination de Gauss afin d'exploiter la propriété de définie positivité pour améliorer la performance de la résolution. De la même façon, dans le cas d'un système linéaire $Ax = b$ où la matrice est hermitienne, mais pas nécessairement définie positive, ce sont les factorisations implémentées ici qui permettent d'exploiter cela afin d'améliorer la performance de la résolution. De nombreux problèmes comportent des matrices hermitiennes indéfinies, tels que des problèmes aux moindres carrés, des problèmes d'optimisation et même la résolution numérique des équations de Navier-Stokes pour fluide incompressible par exemple [1]. L'implémentation qui sera réalisée dans le cadre de ce projet est donc très utile pour tous ces types de problèmes, en notant qu'en plus leur structure possède la propriété d'améliorer la stabilité numérique des opérations de résolution [1]. Il est donc attendu que la performance (nombre d'allocations, temps d'exécution, etc.) et la stabilité numérique des problèmes à matrice hermitienne résolus grâce à ces factorisations soient bien meilleures que lorsqu'ils sont résolus avec une méthode plus générale, mais qui n'exploite pas la propriété qu'a la matrice d'être hermitienne. Par ailleurs, les implémenter en Julia vient avec la capacité de pouvoir résoudre ces problèmes avec des types de donnée plus généraux, comme avec des *BigFloat* par exemple. En effet, autrement, Julia ne peut qu'appeler LAPACK pour utiliser ces factorisations et LAPACK ne traite pas tous les types de donnée, y compris les *BigFloat*. Ceci est donc également une contribution potentielle intéressante.
 
 # Références
 
