@@ -7,7 +7,7 @@ function lbl_complete(A; tol=1e-14)
     L = Matrix{Float64}(I, n, n)
     B = zeros(n, n)
     k = 1
-    α = (1 + sqrt(17)) / 8  
+    α = (1 + sqrt(17)) / 8 
 
     while k ≤ n
         # Identifie μ₀ et μ₁
@@ -18,8 +18,8 @@ function lbl_complete(A; tol=1e-14)
         p, q = k, k
         μ₀ = zero(eltype(A))
         for i in k:n
-            for j in i:n
-                if i != j && abs(A[i, j]) > μ₀
+            for j in (i+1):n
+                if abs(A[i, j]) > μ₀
                     μ₀ = abs(A[i, j])
                     p, q = i, j
                 end
@@ -29,7 +29,6 @@ function lbl_complete(A; tol=1e-14)
         # Choix du pivot selon le critère et mise à jour des matrices
         if μ₁ ≥ α * μ₀ || k == n
             # Pivot de taille 1×1
-
             # Permute les lignes r et k, si r≠k
             if r != k
                 A[:, [k, r]] = A[:, [r, k]]
@@ -42,10 +41,11 @@ function lbl_complete(A; tol=1e-14)
 
             # Met L et A à jour
             if abs(B[k, k]) > tol && k < n
-              # Met à jour les valeurs sous la diagonale pour L
+                # Met à jour les valeurs sous la diagonale pour L
+                L[i, k] .= A[i, k] / B[k, k]
+
+                # Met à jour le bloc inférieur droit pour A
                 for i in k+1:n
-                    L[i, k] = A[i, k] / B[k, k]
-                    # Met à jour le bloc inférieur droit pour A
                     for j in k+1:i
                         A[i, j] -= L[i, k] * B[k, k] * L[j, k]
                         A[j, i] = A[i, j] 
@@ -56,7 +56,6 @@ function lbl_complete(A; tol=1e-14)
         else
 
             # Pivot de taille 2×2
-            
             # Permute les lignes p et k, si p≠k
             if p != k
                 A[:, [k, p]] = A[:, [p, k]]
@@ -72,7 +71,7 @@ function lbl_complete(A; tol=1e-14)
 
             # Extrait le bloc E (car pas un scalaire)
             E = A[k:k+1, k:k+1]
-            # Met B à jourS
+            # Met B à jour
             B[k:k+1, k:k+1] = E
 
             # Met L et A à jour
@@ -97,15 +96,3 @@ function lbl_complete(A; tol=1e-14)
 
     return P, L, B
 end
-
-
-
-A = [0.0 1.0 2.0; 1.0 0.0 3.0; 2.0 3.0 0.0]
-p, L, B = lbl_complete(A)
-
-# Verify the factorization
-A_perm = A[p, p]
-A_fact = L * B * L'
-A_all = A_fact[p, p]
-residual = norm(A_perm - A_fact)
-
