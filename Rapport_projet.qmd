@@ -15,6 +15,9 @@ format:
             \usepackage{xspace}
             \usepackage[francais]{babel}
             \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+            \usepackage[table]{xcolor}
+            \newcommand\y{\cellcolor{green!10}}
+            \newcommand\x{\cellcolor{blue!10}}
     geometry:
       - margin=1in
     papersize: letter
@@ -81,17 +84,23 @@ La différence entre les processus de Bunch-Parlett et Bunch-Kaufman repose dans
 Les objectifs principaux du projet, pour débuter, sont tels que donné dans l'énoncé;
 
 1. Comprendre et documenter les factorisations de Bunch-Parlett et Bunch-Kaufman (pivotage complet et pivotage partiel.) Fournir des exemples, des schémas explicatifs, faire des liens avec les éléments vus en classe.
-  - Voir section description et sections x et x. 
+  - Voir la section Description du projet et la section Implémentation. La description des factorisations précède le pseudo-code des deux fonctions ainsi que le code lui-même. 
+  - Quelques schémas y sont utilisés pour illustrer les stratégies de pivot.
+  - Un schéma dans la section Stratégies d'optimitisation illustre le stockage de la factorisation de façon compacte. 
 
 2. Implémenter ces deux factorisation ainsi que l'alternative du *rook pivoting*. Les comparer et identifier leurs avantages et leurs inconvénients respectifs. 
-  - Pour le pivotage complet, on s'attend à au plus $n^3/6$ comparaisons pour le choix de $p$.
-  - Pour le pivotage partiel, on s'attend à $O(n^2)$ comparaisons pour le choix de $p$. 
-  - Pour le *rook pivoting*, on s'attend à entre $O(n^2)$ et $O(n^3)$ comparaisons pour le choix de $p$
-  - Les implémentations dans Julia nous donnerons le référent pour le nombre de flops des implémentations complètes.
+  - Pour le pivotage complet, on s'attend à au plus $n^3/6$ comparaisons pour le choix de $p$. (to check)
+  - Pour le pivotage partiel, on s'attend à $O(n^2)$ comparaisons pour le choix de $p$. (to check)
+  - Pour le *rook pivoting*, on s'attend à entre $O(n^2)$ et $O(n^3)$ comparaisons pour le choix de $p$ (to check)
+  - Les implémentations dans Julia nous donnerons le référent pour le nombre de flops des implémentations complètes. (to check)
+
+  - L'implémentation de chaque processus est décrite dans la section Implémentation. 
+  - La sous-section Stratégies d'optimitisation explique comment les fonctions ont été optimisées pour réduire le temps d'exécution ainsi que le nombre d'allocation.
+  - La section Comparaison des processus compare les 3 processus entre eux ainsi que d'un point de vue théorique.
 
 3. Comparer nos implémentations à celles déjà disponibles dans Julia et tenter d'identifier les sources possibles des différences observées.
-  - Julia possède une fonction de base dans LinearAlgebra appelée ```BunchKaufman```. La fonction retourne trois matrices, $D$, $U$ et $p$.
-  - Nous n'avons pour l'instant pas trouvé d'implémentation de Bunch-Parlett en Julia (pas dans les fonctions de base du moins.)
+  - Julia possède une fonction de base dans LinearAlgebra appelée ```BunchKaufman```. La fonction retourne trois matrices, $D$, $U$ et $p$. (to check)
+  - Nous n'avons pour l'instant pas trouvé d'implémentation de Bunch-Parlett en Julia (pas dans les fonctions de base du moins.) (to check)
     
 4. Joindre la factorisation à des méthodes de résolution de systèmes linéaires. 
 
@@ -100,70 +109,390 @@ Les objectifs principaux du projet, pour débuter, sont tels que donné dans l'�
 
 # Implémentation des factorisations
 
+## Stratégies d'optimisation
+
+Différentes stratégies ont été adoptées pour optimiser les performances des fonctions créées, autant d'un point de vue mémoire que vitesse d'exécution.
+
+Pour limiter le nombre d'allocations, les matrices $B$ et $L$ sont stockées directement aux emplacements mémoire de $A$ tout au long de la factorisation. Dans le schéma suivant, les blocs bleus représentent les blocs de la matrice $B$ et les verts, les colonnes de la matrices $L$. Toutes les valeurs au dessus de la diagonale de bloc sont mises à $0$.
+
+$$ A = \left(\begin{array}{ccccccc}
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+  \end{array}\right) \to \left(\begin{array}{ccccccc}
+    \x \Box  & 0  & 0 & 0 & 0 & 0 & 0 \\
+    \y \Box   & \x \Box  & \x \Box & 0 & 0 & 0 & 0 \\
+    \y \Box   & \x \Box   & \x \Box & 0 & 0 & 0 & 0 \\
+    \y \Box   & \y \Box   & \y \Box  & \x \Box & 0 & 0 & 0 \\
+    \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & \x \Box & 0 \\
+    \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & \x \Box & 0 \\
+    \y \Box  &  \y \Box  & \y \Box & \y \Box & \y \Box & \y \Box & \x \Box \\
+  \end{array}\right) $$ 
+
+On peut facilement extraire les matrices $B$ et $L$ de cette forme, puisque la taille des blocs est implicitement indiquée par la présente de valeurs ou de 0 sur la première diagonale supérieur (juste au dessus de la diagonale principale.)
+
+La symmétrie de la matrice est également exploitée pour diminuer le temps d'exécution. En effet, lors de la recherche des valeurs maximales hors diagonales (pour Bunch-Parlett), seule la moitié de la matrice a besoin d'être parcourue. La matrice d'entrée est également établie comme étant Hermitienne, ce qui permet de limiter l'espace mémoire. 
+
+P stockée en vecteur ? Voir avec Téo
+
+Les `views` sont utilisées pour limiter le nombre d'allocations et des boucles sont aussi utilisées à plusieurs endroits pour éviter le stockage de vecteurs complets. Pour les pivots de taille $2\times 2$, le complément de Schur est calculé via son expression algébrique pour encore une fois éviter une allocation de vecteur. Il en va de même pour la mise à jour de $L$ dans le cas $2\times 2$.
+
+La fonction `extract_lb` permet de récupérer les matrices $B$ et $L$ issue de l'une ou l'autres des implémentations de la factorisation (Bunch-Parlett, Bunch-Kaufman ou *rook pivoting*.)
+
 ## Bunch-Parlett
-La stratégie de Bunch-Parlett pour le choix du pivot est aussi appelé *pivotage complet*. Elle se base sur les valeurs maximales des entrées de la matrice sur et hors diagonal. Le choix du pivot est effectué comme suit;
+La stratégie de Bunch-Parlett pour le choix du pivot est aussi appelée *pivotage complet*. Elle se base sur les valeurs maximales des entrées de la matrice sur et hors diagonal. Le choix du pivot est effectué comme suit;
 
-  poser   $\alpha = (1+ \sqrt{17})/8$
-  poser   $\mu_0 = \max_{i,j}|a_{ij}| =: |a_{pq}|,\;(q\ge p)$
-          $\mu_1 = \max_{i}|a_{ii}| =: |a_{rr}|$
+> Poser   $\alpha = (1+ \sqrt{17})/8$
 
-  si $\mu_1\ge \alpha\mu_0$
+> Poser   $\mu_0 = \max_{i,j}|a_{ij}| =: |a_{pq}|,\;(q\ge p)$
 
-  Utiliser $a_{rr}$ comme pivot $1\times 1$ ($s=1$, les colonnes et rangées $k$ et $r$ sont permutées)
+> Poser $\mu_1 = \max_{i}|a_{ii}| =: |a_{rr}|$
 
-  sinon
+> Si $\mu_1\ge \alpha\mu_0$
 
-  Utiliser $\begin{bmatrix} a_{pp} & a_{qp} \\ a_{qp} & a_{qq} \end{bmatrix}$ comme pivot $2\times 2$ ($s=2$, les colonnes et rangées $k$ et $p$ sont permutées, suivies des colonnes et rangées $k+1$ et $q$)
+>> Utiliser $a_{rr}$ comme pivot $1\times 1$ ($s=1$, les colonnes et rangées $1$ et $r$ sont permutées)
+
+> Sinon
+
+>> Utiliser $\begin{bmatrix} a_{pp} & a_{qp} \\ a_{qp} & a_{qq} \end{bmatrix}$ comme pivot $2\times 2$ ($s=2$, les colonnes et rangées $1$ et $p$ sont permutées, suivies des colonnes et rangées $2$ et $q$)
+
+On peut visualiser l'emplacement des pivots comme suit;
+
+$$ \left(\begin{array}{ccccccc}
+    \ddots  & \cdots  & \cdots & \cdots & \cdots & \cdots & \cdots \\
+    	\vdots  & a_{rr}  &  &  &  &  &  \\
+    	\vdots  &  & \ddots &  &  &  &  \\
+    	\vdots  &  &  & a_{pp} & \cdots & a_{qp} &  \\
+    	\vdots  &  &  & 	\vdots & \ddots & 	\vdots &  \\
+    	\vdots  &  &  & a_{qp} & \cdots & a_{qq} &  \\
+    	\vdots  &  &  &  &  &  & \ddots \\
+  \end{array}\right)$$ 
   
-Paragraphe sur la justification du choix de $\alpha$ À ÉCRIRE.
+Il est intéressant de regarder de plus près la valeur de $\alpha$ et la manière dont cette dernière est obtenue. Elle est dérivée directement de la borne sur les éléments des blocs de $B$, elle-même issue des valeurs maximales contenues dans $A$. Comme cette valeur est reprise dans les processus de Bunch-Kaufman ainsi que dans l'alternative du *rook pivoting*, nous trouvons pertinent d'en présenter la brève dérivation ici. 
 
-Pour l'implémentation, on combine ce choix de $p$ à la mise en place de base du problème, vue dans la première section du rapport. Le pseudo-code suivant est ce qui a été suivi pour l'implémentation. 
+### Dérivation de $\alpha$
+
+Dans le cas du pivot $1\times 1$, ce dernier est choisi si $\mu_1 \ge \alpha\mu_0$, i.e $\max_i|a_{ii}| \ge \alpha\max_{ij}|a_{ij}|$. Toutes les mises à jour de $A$ via le complément de Schur sont ainsi bornée; 
+
+$$ |a_{ij}| = |b_{ij} - c_{i1}\frac{1}{e_{11}}c_{1j} \le \mu_0 +\frac{\mu_0^2}{\mu_1} \le \left(1+\frac{1}{\alpha}\right)\mu_0 $$
+
+On peut borner les valeurs de $|a_{ij}|$ de manière semblable pour le cas du pivot $2\times 2$. On note cette fois le complément de Schur comme
+
+$$a_{ij} = b_{ij} - \begin{bmatrix}c_{i1} & c_{i2}\end{bmatrix}E^{-1}\begin{bmatrix}c_{i1} \\ c_{i2}\end{bmatrix} $$
+
+où 
+
+$$E^{-1} = \frac{1}{det(E)}\begin{bmatrix}e_{22} & -e_{12} \\ -e_{21} & e_{11}\end{bmatrix} $$
+
+Par symétrie de $E$
+
+$$det(E) = e_{11}e_{22} - e_{21}^2 \le \mu_1^2-\mu_0^2 \le (\alpha^2-1)\mu_0^2 $$
+
+Il est alors posé que $\alpha\in(0,1)$, de telle sorte que $|det(E)|\ge (1-\alpha^2)\mu_0^2$. Il est alors possible de borner supérieurement $E^{-1}$ dans le complément de Schur. En effet
+
+$$|E^{-1}|\le \frac{1}{(1-\alpha^2)\mu_0^2}\begin{bmatrix}\alpha & 1 \\ 1 & \alpha \end{bmatrix}$$
+
+et donc
+
+$$|a_{ij}|\le \mu_0+\frac{1(1+\alpha)\mu_0^2}{(1-\alpha^2)\mu_0}=\left(1+\frac{2}{1-\alpha}\right)\mu_0$$
+
+Finalement, pour obtenir la valeur de $\alpha$, le multiplicateur de $\mu_0$ dans la borne du pivot de $2\times 2$ est rendu équivalent à deux fois le multiplicateur de $\mu_0$ dans la borne du pivot de $1\times 1$, soit
+
+$$ \left(1+\frac{1}{\alpha}\right)^1 =  \left(1+\frac{2}{1-\alpha}\right)$$
+
+Ce système peut être résolu et mène à deux valeurs de $\alpha$, parmi lesquelles on choisi la valeur positive, qui est bien $\alpha=(1+\sqrt{17})/8$. 
+
+Il s'agit d'une dérivation assez simple d'une valeur reprise dans chacune des implémentations auxquelles ce projet s'intéresse. Le concept de choix de pivot et de borne sur l'augmentationd des éléments est aussi présent dans d'autres types de factorisation et dans des méthodes de base comme l'élimination de Gauss. 
+
+### Pseudo-code
+
+Pour l'implémentation, on combine le choix de $p$ à la mise en place de base du problème, vue dans la première section du rapport. Le pseudo-code suivant est ce qui a été suivi pour l'implémentation, présentée dans la partie résultats. 
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
 \SetAlgoLined
 \KwResult{$PAP^T = LBL^T$}
 \SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-\Input{A symmétrique indéfinie}
-\Output{P, L, B}
+\Input{A hermitienne indéfinie}
+\Output{A modifiée, P}
 \BlankLine
+$\alpha = (1+ \sqrt{17})/8$ \;
+$k = 1$ \;
 \While{$k \le n$}{
-    $\alpha = (1+ \sqrt{17})/8$ \;
+    $@view A[k:n,k:n]$ \;
     $\mu_1 = \max_i |a_{ii}| := |a_{rr}|$ \;
     $\mu_0 = \max_{ij} |a_{ij}| := |a_{pq}|$ \;
     \eIf{$\mu \ge \alpha\mu_0$}{
         $a_{rr}$ est le pivot $1\times 1$, $s=1$ \;
         Permuter les lignes et colonnes $k$ et $r$ dans $A$ \;
         Permuter les entrées $k$ et $r$ dans $P$ \;
-        Mettre à jour $B$ avec $A[k,k]$ \;
-        Mettre à jour $L$ avec $C_k/A[k,k]$ \;
-        Mettre à jour le bloc inférieur droit de $A$ avec $D_k-C_kA[k,k]C_k^T$ \;
-        $k+=1$ \;
+        Insérer le bloc $E$ dans $A[k,k]$ \;
+        Insérer la colonne $L$ dans  $A[(k+1):n,k]$ \;
+        Mettre à jour le bloc inférieur droit de $A$ selon le complément de Schur \;
+        $k\;+= 1$ \;
+        Mettre à jour la vue sur $A$ \;
     }{
         $a_{pq}$ est le pivot $2\times 2$, $s=2$\;
         Permuter les lignes et colonnes $k$ et $p$ dans $A$ \;
         Permuter les lignes et colonnes $k+1$ et $q$ dans $A$ \;
         Permuter les entrées $k$ et $p$ dans $P$ \;
         Permuter les entrées $k+1$ et $q$ dans $P$ \;
-        Extraire $E$ de $A$ \;
-        Mettre à jour $B$ avec $E$ \;
-        Inverser $E$ \;
-        Mettre à jour $L$ avec $C_kE^{-1}$ \;
-        Mettre à jour le bloc inférieur droit de $A$ avec $D_k-C_kA[k,k]C_k^T$ \;
-        $k+=2$ \;
+        Insérer le bloc $E$ dans $A[k:(k+1),k:(k+1)]$ \;
+        Insérer les colonnes de $L$ dans  $A[(k+1):n,k:(k+1)]$ \;
+        Mettre à jour le bloc inférieur droit de $A$ selon le complément de Schur \;
+        $k\;+=2$ \;
+        Mettre à jour la vue sur $A$ \;
     }
 }
 \caption{Factorisation de Bunch-Parlett (pivotage complet)}
 \end{algorithm}
 
-La fonction suivante est notre implémentation optimisée (À FAIRE/VOIR) de la factorisation de Bunch-Parlett. 
+## Bunch-Kaufman
 
+La stratégie de Bunch-Kaufman pour le choix du pivot est aussi appelée *pivotage partiel*. Comme dans la stratégie de Bunch-Parlett, elle se base sur les valeurs maximales des entrées de la matrice sur et hors diagonale. La différence repose dans le fait qu'elle évite le scannage complet de la matrice pour faire son choix, le décortiquant plutôt en 3 sections de recherche beaucoup plus petite. Le choix du pivot est effectué comme suit;
+
+> Poser   $\alpha = (1+ \sqrt{17})/8$
+
+> Poser   $\omega_1 = \max_{i}|a_{i1}|$ pour $i$ sous diagonale
+  
+> Si $\omega_1=0$, passer à la sous-matrice suivante.
+
+> Sinon
+
+>> Si $|a_{11}|\ge \alpha\omega_1$
+
+>>> Utiliser $a_{11}$ comme pivot $1\times 1$ ($s=1$, aucune permutation)
+
+>> Sinon
+
+>>> Poser $r$, l'index de la valeur maximale dans la colonne 1
+
+>>> Poser $\omega_r = \max_{i}|a_{ir}|$ pour $i$ sous diagonale
+
+>>> Si $|a_{11}|\omega_r \ge \alpha\omega_1^2$
+
+>>>> Utiliser $a_{11}$ comme pivot $1\times 1$ ($s=1$, aucune permutation)
+
+>>> Sinon 
+
+>>>> Si $|a_{rr}| \ge \alpha\omega_r$
+
+>>>>> Utiliser $a_{rr}$ comme pivot $1\times 1$ ($s=1$, les colonnes et rangées $1$ et $r$ sont permutées)
+
+>>>> Sinon
+
+>>>>> Utiliser $\begin{bmatrix} a_{11} & a_{r1} \\ a_{r1} & a_{rr} \end{bmatrix}$ comme pivot $2\times 2$ ($s=2$, les colonnes et rangées $2$ et $r$ sont permutées)
+
+On peut visualiser l'emplacement des pivots comme suit;
+
+$$ \left(\begin{array}{cccccc}
+    a_{11}  & \cdots  & a_{r1}(\omega_1) & \cdots & \cdots & \cdots \\
+    	\vdots  &  & \vdots &  &  & \\
+    	a_{r1}(\omega_1) & \cdots & a_{rr} & \cdots & a_{ir}(\omega_r) & \cdots \\
+    	\vdots  &  & \vdots &  &  & \\
+    	\vdots  &  & a_{ir}(\omega_r) &  &  & \\
+    	\vdots  &  & vdots &  &  &  \\
+  \end{array}\right)$$ 
+
+Pour l'implémentation, on reprend la majorité de ce qui a été fait pour Bunch-Parlett, mais en ajustant le choix de $p$. Le pseudo-code suivant est ce qui a été suivi pour l'implémentation. 
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\SetAlgoLined
+\KwResult{$PAP^T = LBL^T$}
+\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+\Input{A hermitienne indéfinie}
+\Output{A modifiée, P}
+\BlankLine
+$\alpha = (1+ \sqrt{17})/8$ \;
+$k = 1$ \;
+\While{$k < n-1$}{
+  $@view A[k:n,k:n]$ \;
+  $\omega_1 = \max_i|a_{i1}|$ pour $i$ sous la diagonale \;
+  \eIf{$\omega_1=0$}{
+    Passer à la sous-matrice suivante\;
+  }{
+    \eIf{$|a_{11}|\ge \alpha\omega_1$}{
+      $a_{11}$ est le pivot $1\times 1$, $s=1$ \;
+      Insérer le bloc $E$ dans $A[k,k]$ \;
+      Insérer la colonne $L$ dans  $A[(k+1):n,k]$ \;
+      Mettre à jour le bloc inférieur droit de $A$ selon le complément de Schur \;
+      $k\;+= 1$ \;
+      Mettre à jour la vue sur $A$ \;
+  }{ 
+      $r=\text{index}(\max_i|a_{i1}|)$ \;
+      $\omega_r=\max_i|a_{ir}|$ pour $i$ sous la diagonale \;
+
+  \eIf{$|a_{11}| \omega_r \ge \alpha\omega_1^2$}{
+      $a_{11}$ est le pivot $1\times 1$, $s=1$ \;
+      Insérer le bloc $E$ dans $A[k,k]$ \;
+      Insérer la colonne $L$ dans  $A[(k+1):n,k]$ \;
+      Mettre à jour le bloc inférieur droit de $A$ selon le complément de Schur \;
+      $k\;+= 1$ \;
+      Mettre à jour la vue sur $A$ \;
+    }{
+            \eIf{$|a_{rr}|\ge \alpha\omega_r$}{
+              $a_{rr}$ est le pivot $1\times 1$, $s=1$ \;
+              Permuter les lignes et colonnes $k$ et $r$ dans $A$ \;
+              Permuter les entrées $k$ et $r$ dans $P$ \;
+              Insérer le bloc $E$ dans $A[k,k]$ \;
+              Insérer la colonne $L$ dans  $A[(k+1):n,k]$ \;
+              Mettre à jour le bloc inférieur droit de $A$ selon le complément de Schur \;
+              $k\;+= 1$ \;
+              Mettre à jour la vuesur $A$ \;
+            }{
+              $a_{r1}$ est le pivot $2\times 2$, $s=2$\;
+        Permuter les lignes et colonnes $k+1$ et $r$ dans $A$ \;
+        Permuter les entrées $k+1$ et $r$ dans $P$ \;
+        Insérer le bloc $E$ dans $A[k:(k+1),k:(k+1)]$ \;
+        Insérer les colonnes de $L$ dans  $A[(k+1):n,k:(k+1)]$ \;
+        Mettre à jour le bloc inférieur droit de $A$ selon le complément de Schur \;
+        $k\;+=2$ \;
+        Mettre à jour la vue sur $A$ \;
+            }
+          }
+
+        }
+    }
+}
+\caption{Factorisation de Bunch-Kaufman (pivotage partiel)}
+\end{algorithm}
+
+## Rook pivoting
+
+La stratégie de *Rook pivoting* est utilisée lorsque l'on veut éviter que la norme de $L$ soit trop grande (ce qui peut générer des instabilités dans certains algorithmes.) Plusieurs éléments du processus sont les mêms que pour Bunch-Kaufman, mais le processus comporte une portion itérative. Le choix du pivot est effectué comme suit;
+
+> Poser   $\alpha = (1+ \sqrt{17})/8$
+
+> Poser   $\omega_1 = \max_{i}|a_{i1}|$ pour $i$ sous diagonale
+  
+> Si $\omega_1=0$, passer à la sous-matrice suivante.
+
+> Sinon
+
+>> Si $|a_{11}|\ge \alpha\omega_1$
+
+>>> Utiliser $a_{11}$ comme pivot $1\times 1$ ($s=1$, aucune permutation)
+
+>> Sinon
+
+>>> $i=1$
+
+>>> Répéter jusqu'au choix d'un pivot
+
+>>>> Poser $r$, l'index de la valeur maximale dans la colonne i
+
+>>>> Poser $\omega_r = \max_{i}|a_{ir}|$ pour $i$ sous diagonale
+
+>>>> Si $|a_{rr}| \ge \alpha\omega_r$
+
+>>>>> Utiliser $a_{rr}$ comme pivot $1\times 1$ ($s=1$, les colonnes et rangées $1$ et $r$ sont permutées)
+
+>>>> Sinon 
+
+>>>>> Si $\omega_i=\omega_r$
+
+>>>>>> Utiliser $\begin{bmatrix} a_{ii} & a_{ri} \\ a_{ri} & a_{rr} \end{bmatrix}$ comme pivot $2\times 2$ ($s=2$, les colonnes et rangées $1$ et $i$ sont permutées, suivies des colonnes et rangées $2$ et $r$)
+
+>>>>> Sinon
+
+>>>>>> $i=r$, $\omega_i=\omega_r$
+
+Si un pivot $1\times 1$ est trouvé, le pivot est choisi directement. Sinon, le processus cherche un pivot $a_{ri}$ tel que $|a_{ri}|$ est le maximum dans la rangée $r$ et le maximum dans la colonne $i$. 
+
+Le pseudo-code est encore une fois semblable à celui des processus précédent, à la différence de la boucle `while` utilisée dans le choix du pivot.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\SetAlgoLined
+\KwResult{$PAP^T = LBL^T$}
+\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+\Input{A hermitienne indéfinie}
+\Output{A modifiée, P}
+\BlankLine
+$\alpha = (1+ \sqrt{17})/8$ \;
+$k = 1$ \;
+\While{$k < n - 1$}{
+  $@view A[k:n,k:n]$ \;
+  $\omega_1 = \max_i|a_{i1}|$ pour $i$ sous la diagonale \;
+  \eIf{$\omega_1=0$}{
+    Passer à la sous-matrice suivante \;
+  }{
+    \eIf{$|a_{11}| \ge \alpha \omega_1 $}{
+      $a_{11}$ est le pivot $1\times 1$, $s=1$ \;
+      Insérer le bloc $E$ dans $A[k,k]$ \;
+      Insérer la colonne $L$ dans  $A[(k+1):n,k]$ \;
+      Mettre à jour le bloc inférieur droit de $A$ selon le complément de Schur \;
+      $k\;+= 1$ \;
+      Mettre à jour la vue sur $A$ \; 
+  }{
+      $j=1$ \;
+
+  \While{Un pivot n'a pas été choisi}{
+    $r=\text{index}(\max_i|a_{ij}|)$ \;
+    $\omega_r=\max_i|a_{ir}|$ pour $i$ sous la diagonale \;
+    \eIf{$|a_{rr}| \ge \alpha \omega_r$}
+    {
+      $a_{rr}$ est le pivot $1\times 1$, $s=1$ \;
+      Permuter les lignes et colonnes $k$ et $r$ dans $A$ \;        Permuter les entrées $k$ et $r$ dans $P$ \;
+      Insérer le bloc $E$ dans $A[k,k]$ \;
+      Insérer la colonne $L$ dans  $A[(k+1):n,k]$ \;
+      Mettre à jour le bloc inférieur droit de $A$ selon le complément de Schur \;
+      $k\;+= 1$ \;
+      Mettre à jour la vuesur $A$ \;}{
+
+  \eIf{$\omega_i=\omega_r$}{
+    $a_{rj}$ est le pivot $2\times 2$, $s=2$\;
+    Permuter les lignes et colonnes $1$ et $j$ dans $A$ \;
+    Permuter les lignes et colonnes $2$ et $r$ dans $A$ \;
+    Permuter les entrées $1$ et $j$ dans $P$ \;
+    Permuter les entrées $2$ et $r$ dans $P$ \;
+    Insérer le bloc $E$ dans $A[k:(k+1),k:(k+1)]$ \;
+    Insérer les colonnes de $L$ dans  $A[(k+1):n,k:(k+1)]$ \;
+    Mettre à jour le bloc inférieur droit de $A$ selon le complément de Schur \;
+    $k\;+=2$ \;
+    Mettre à jour la vue sur $A$ \;
+  }{
+    $j=r$ \;
+    $\omega_j=\omega_r$
+  }
+      }
+  }    
+  }
+  }
+}
+\caption{Factorisation avec rook-pivoting}
+\end{algorithm}
+
+# Résultats de tests et applications
+
+La fonction suivante implémente la factorisation de Bunch-Parlett (pivotage complet.)
 ```{julia}
 {{< include lbl_complete_pivoting.jl >}}
 ```
 
+La fonction suivante implémente la factorisation de Bunch-Kaufman (pivotage partiel.)
 
-## Bunch-Kaufman
+
+Finalement, la fonction suivante implémente la factorisation avec *rook pivoting*.
+
+# Comparaison des processus
+
+## Théorique
+
+Un théorème permet d'assurer la stabilité du processus de Bunch-Kaufman.Ce théorème assure que pour $(A+\Delta A)\hat{x}=b$ la solution du système $\hat{x}$, la perturbation sur la norme de $A$ est bornée supérieurement comme $\parallel \Delta A\parallel_M \le p(n)\rho_n u\parallel A\parallel_M + O(u^2)$ où $p$ est quadratique. Ce résultat s'applique si le système est résolu par élimination gaussienne ou en utilisant l'inverse. Aucun résultat semblable n'est associé à Bunch-Parlett.
+
+Pour tous les processus d'intérêt dans ce projet, un autre résultat intéressant est le suivant:
+
+$$ \frac{\parallel x-\hat{x}\parallel_\infty}{\parallel x \parallel_\infty} \le p(n)u\;\text{cond}(A)\;\text{cond}(|D| |L^T|)+O(u^2) $$
+
+$\text{cond}(|D| |L^T|)$ n'est pas borné pour le pivotage partiel, mais il l'est pour le *rook pivoting* et cette méthode est donc en théorie moins sensible à un $A$ initial moins bien conditionné. 
+
+## Selon nos essais
 
 # Difficultés rencontrées
 
