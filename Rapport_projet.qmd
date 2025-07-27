@@ -25,6 +25,15 @@ format:
     urlcolor: blue
 engine: julia
 ---
+# Table of Contents
+
+1. [Description du projet](#Description-du-projet)
+2. [Théorie](#Théorie)
+3. [Implémentation](#Implémentation)
+4. [Tests et performances](#Tests-et-performances)
+5. [Discussion](#Discussion)
+6. [Retour sur les objectifs](#Retour-sur-les-objectifs)
+
 
 # Description du projet
 
@@ -34,20 +43,21 @@ Certaines structures symétriques sont fréquemment rencontrées lors de la rés
 
 $$\begin{bmatrix} I & A \\ A^T & 0 \end{bmatrix}\begin{bmatrix} r \\ x \end{bmatrix} = \begin{bmatrix} b \\ 0 \end{bmatrix}$$
 
-où la matrice formée de $A$ et $A^T$ est symétrique et toujours indéfinie. De manière intéressante, toute autre matrice $B$ symétrique et indéfinie peut être permutée pour adopter une forme similaire, soit
+où la matrice formée de $A$ et $A^T$ est symétrique et toujours indéfinie. Sous cette forme, le bloc supérieur gauche est bien évidemment inversible, puisqu'il est égal à l'identité. De manière intéressante, toute autre matrice $B$ symétrique et indéfinie peut être permutée pour adopter une forme où le bloc supérieur gauche est inversible, soit
 
 $$PBP^T = \begin{bmatrix} E & C^T \\ C & D \end{bmatrix}$$
 
-où $E$ est inversible. Ce type de problème est donc particulièrement fréquent et il est intéressant de s'intéresser à une méthode de résolution où la symétrie des matrices est exploitée. 
+où $D=D^T$ et $E=E^T$ inversible. Ce type de problème est donc particulièrement fréquent et il est intéressant de s'intéresser à une méthode de résolution où la symétrie des matrices est exploitée. 
 
 La décomposition de Cholesky n'existe pas pour ce genre de système puisque la matrice considérée n'est pas définie-positive, ce qui est une exigence associée à ce type de factorisation. Une factorisation $LDL^*$ pourrait exister, mais pas systématiquement et elle court le risque d'être numériquement instable. Higham illustre bien ce risque dans son livre avec l'exemple suivant:
 
 $$A = \begin{bmatrix} \epsilon & 1 \\ 1 & \epsilon\end{bmatrix} = \begin{bmatrix} 1 & 0 \\ 1/\epsilon & 1\end{bmatrix}\begin{bmatrix} \epsilon & 0 \\ 0 & \epsilon-1/\epsilon\end{bmatrix}\begin{bmatrix} 1 & 1/\epsilon \\ 0 & 1\end{bmatrix}$$
 
-$A$ est symétrique et si $\epsilon\to 0$, indéfinie. On remarque que dans le cas où $\epsilon=0$ la factorisation n'existe tout simplement et que le reste du temps, les facteurs $1/\epsilon$ risquent de grossir de manière disproportionnée, menant à un système mal conditionné ou à des erreurs numériques importantes. 
+$A$ est symétrique et si $\epsilon< 1$, indéfinie. On remarque que dans le cas où $\epsilon=0$ la factorisation n'existe tout simplement et que le reste du temps, les facteurs $1/\epsilon$ risquent de grossir de manière disproportionnée, menant à un système mal conditionné ou à des erreurs numériques importantes. 
 
 Ce projet va donc plutôt s'intéresser aux factorisations de Bunch-Parlett et Bunch-Kaufman, qui exploitent toutes deux l'idée de permutation mentionnée précédemment. La mise en place algébrique étant la même dans les deux cas, nous allons dès maintenant la présenter brièvement.
 
+# Théorie
 ## Factorisation en bloc pour matrices symétriques
 
 Tel que mentionné ci-dessus, toute matrice $A\in\mathbb{C}^{n\times n}$ symétrique non-nulle peut être permutée de la manière suivante:
@@ -58,7 +68,7 @@ où $E\in\mathbb{C}^{s\times s}$, $C\in\mathbb{C}^{n-s\times s}$ et $D\in\mathbb
 
 $$PAP^T = \begin{bmatrix} I_s & 0 \\ CE^{-1} & I_{n-s} \end{bmatrix} \begin{bmatrix} E & 0 \\ 0 & D-CE^{-1}C^T \end{bmatrix} \begin{bmatrix} I_s & E^{-1}C^T \\ 0 & I_{n-s} \end{bmatrix}$$
 
-On reconnait $D-CE^{-1}C^T$ comme étant le complément de Schur de la matrice $PAP^T$. Ce complément est aussi symétrique, par symétrie des blocs $E$ et $D$;
+On reconnait $D-CE^{-1}C^T$ comme étant le complément de Schur de $E$ dans la matrice $PAP^T$. Ce complément est aussi symétrique, par symétrie des blocs $E$ et $D$;
 
 $$(D-CE^{-1}C^T)^T = D^T - CE^{-T}C^T = D-CE^{-1}C^T$$
 
@@ -66,84 +76,21 @@ On peut donc répéter le processus sur cette matrice de dimension $(n-s)\times 
 
 À titre d'illustration, imaginons être à l'itération $k$ avec la forme suivante;
 
-$$p_kA_kP_k^T = \begin{bmatrix} E_k & C_k^T \\ C_k & D_k \end{bmatrix} = \begin{bmatrix} I_{s_k} & 0 \\ C_kE_k^{-1} & I_{n-s_k} \end{bmatrix} \begin{bmatrix} E_k & 0 \\ 0 & D_k-C_kE_k^{-1}C_k^T \end{bmatrix} \begin{bmatrix} I_{s_k} & E_k^{-1}C_k^T \\ 0 & I_{n-s_k} \end{bmatrix}$$
+$$P_kA_kP_k^T = \begin{bmatrix} E_k & C_k^T \\ C_k & D_k \end{bmatrix} = \begin{bmatrix} I_{s_k} & 0 \\ C_kE_k^{-1} & I_{n-s_k} \end{bmatrix} \begin{bmatrix} E_k & 0 \\ 0 & D_k-C_kE_k^{-1}C_k^T \end{bmatrix} \begin{bmatrix} I_{s_k} & E_k^{-1}C_k^T \\ 0 & I_{n-s_k} \end{bmatrix}$$
 
 On pose alors $A_{k+1} = D_k-C_kE_k^{-1}C_k^T$ et on procède de la même manière.
 
-$$p_{k+1}A_{k+1}P_{k+1}^T = \begin{bmatrix} E_{k+1} & C_{k+1}^T \\ C_{k+1} & D_{k+1} \end{bmatrix} = \begin{bmatrix} I_{s_{k+1}} & 0 \\ C_{k+1}E_k^{-1} & I_{n-(s_k+s_{k+1})} \end{bmatrix} \begin{bmatrix} E_{k+1} & 0 \\ 0 & D_{k+1}-C_{k+1}E_{k+1}^{-1}C_{k+1}^T \end{bmatrix} \begin{bmatrix} I_{s_{k+1}} & E_{k+1}^{-1}C_{k+1}^T \\ 0 & I_{n-(s_k+s_{k+1})} \end{bmatrix}$$
+$$P_{k+1}A_{k+1}P_{k+1}^T = \begin{bmatrix} E_{k+1} & C_{k+1}^T \\ C_{k+1} & D_{k+1} \end{bmatrix} = \begin{bmatrix} I_{s_{k+1}} & 0 \\ C_{k+1}E_k^{-1} & I_{n-(s_k+s_{k+1})} \end{bmatrix} \begin{bmatrix} E_{k+1} & 0 \\ 0 & D_{k+1}-C_{k+1}E_{k+1}^{-1}C_{k+1}^T \end{bmatrix} \begin{bmatrix} I_{s_{k+1}} & E_{k+1}^{-1}C_{k+1}^T \\ 0 & I_{n-(s_k+s_{k+1})} \end{bmatrix}$$
 
 Et ainsi de suite. Les matrices $P$, $L$ et $B$ sont construites de la façon suivante à chaque itération:
 
 $$P_{k+1} = P_{k+1}P_{k}\dots P_1$$
-$$L_{k+1} = \begin{bmatrix}I_{s_k}  0 & 0 \\ (C_kE_k^{-1})_{s_{k+1}} & s_{k+1} & 0 \\ (C_kE_k^{-1})_{n-(s_k+s_{k+1})} & C_{k+1}E_{k+1}^{-1} & I_{n-(s_k+s_{k+1})}\end{bmatrix}$$$$B_{k+1} = \begin{bmatrix}E_k & 0 & 0 \\ 0 & E_{k+1} & 0 \\ 0 & 0 & S_{k+1}\end{bmatrix}$$
+$$L_{k+1} = \begin{bmatrix}I_{s_k} &  0 & 0 \\ (C_kE_k^{-1})[1:s_{k+1},1:s_{k+1}] & I_{s_{k+1}} & 0 \\ (C_kE_k^{-1})[s_{k+1}+1:n,1:s_{k+1}] & (C_{k+1}E_{k+1}^{-1}) & I_{n-(s_k+s_{k+1})}\end{bmatrix}$$$$B_{k+1} = \begin{bmatrix}E_k & 0 & 0 \\ 0 & E_{k+1} & 0 \\ 0 & 0 & A_{k+2}\end{bmatrix}$$
 
-La différence entre les processus de Bunch-Parlett et Bunch-Kaufman repose dans le choix du pivot, soit de la permutation $p_k$. Le tout sera exploré plus en détail dans ce projet. 
-
-# Objectifs
-
-Les objectifs principaux du projet, pour débuter, sont tels que donné dans l'énoncé;
-
-1. Comprendre et documenter les factorisations de Bunch-Parlett et Bunch-Kaufman (pivotage complet et pivotage partiel.) Fournir des exemples, des schémas explicatifs, faire des liens avec les éléments vus en classe.
-  - Voir la section Description du projet et la section Implémentation. La description des factorisations précède le pseudo-code des deux fonctions ainsi que le code lui-même. 
-  - Quelques schémas y sont utilisés pour illustrer les stratégies de pivot.
-  - Un schéma dans la section Stratégies d'optimitisation illustre le stockage de la factorisation de façon compacte. 
-
-2. Implémenter ces deux factorisation ainsi que l'alternative du *rook pivoting*. Les comparer et identifier leurs avantages et leurs inconvénients respectifs. 
-  - Pour le pivotage complet, on s'attend à au plus $n^3/6$ comparaisons pour le choix de $p$. (to check)
-  - Pour le pivotage partiel, on s'attend à $O(n^2)$ comparaisons pour le choix de $p$. (to check)
-  - Pour le *rook pivoting*, on s'attend à entre $O(n^2)$ et $O(n^3)$ comparaisons pour le choix de $p$ (to check)
-  - Les implémentations dans Julia nous donnerons le référent pour le nombre de flops des implémentations complètes. (to check)
-
-  - L'implémentation de chaque processus est décrite dans la section Implémentation. 
-  - La sous-section Stratégies d'optimitisation explique comment les fonctions ont été optimisées pour réduire le temps d'exécution ainsi que le nombre d'allocation.
-  - La section Comparaison des processus compare les 3 processus entre eux ainsi que d'un point de vue théorique.
-
-3. Comparer nos implémentations à celles déjà disponibles dans Julia et tenter d'identifier les sources possibles des différences observées.
-  - Julia possède une fonction de base dans LinearAlgebra appelée ```BunchKaufman```. La fonction retourne trois matrices, $D$, $U$ et $p$. (to check)
-  - Nous n'avons pour l'instant pas trouvé d'implémentation de Bunch-Parlett en Julia (pas dans les fonctions de base du moins.) (to check)
-    
-4. Joindre la factorisation à des méthodes de résolution de systèmes linéaires. 
-
-5. Appliquer l'implémentation à un ensemble de problèmes modèles ainsi qu'à un problème plus spécifique au choix.
-  - Nous savons que Julia possède des Packages dédiés à l'optimisation et des 'lots' de problèmes d'optimisation de base, qui peuvent être utiles pour faire du Benchmarking et comparer différentes approches. Nous verrons si ces éléments peuvent servir dans notre cas ou pas. 
-
-# Implémentation des factorisations
-
-## Stratégies d'optimisation
-
-Différentes stratégies ont été adoptées pour optimiser les performances des fonctions créées, autant d'un point de vue mémoire que vitesse d'exécution.
-
-Pour limiter le nombre d'allocations, les matrices $B$ et $L$ sont stockées directement aux emplacements mémoire de $A$ tout au long de la factorisation. Dans le schéma suivant, les blocs bleus représentent les blocs de la matrice $B$ et les verts, les colonnes de la matrices $L$. Toutes les valeurs au dessus de la diagonale de bloc sont mises à $0$.
-
-$$ A = \left(\begin{array}{ccccccc}
-    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
-    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
-    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
-    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
-    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
-    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
-    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
-  \end{array}\right) \to \left(\begin{array}{ccccccc}
-    \x \Box  & 0  & 0 & 0 & 0 & 0 & 0 \\
-    \y \Box   & \x \Box  & \x \Box & 0 & 0 & 0 & 0 \\
-    \y \Box   & \x \Box   & \x \Box & 0 & 0 & 0 & 0 \\
-    \y \Box   & \y \Box   & \y \Box  & \x \Box & 0 & 0 & 0 \\
-    \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & \x \Box & 0 \\
-    \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & \x \Box & 0 \\
-    \y \Box  &  \y \Box  & \y \Box & \y \Box & \y \Box & \y \Box & \x \Box \\
-  \end{array}\right) $$ 
-
-On peut facilement extraire les matrices $B$ et $L$ de cette forme, puisque la taille des blocs est implicitement indiquée par la présente de valeurs ou de 0 sur la première diagonale supérieur (juste au dessus de la diagonale principale.)
-
-La symmétrie de la matrice est également exploitée pour diminuer le temps d'exécution. En effet, lors de la recherche des valeurs maximales hors diagonales (pour Bunch-Parlett), seule la moitié de la matrice a besoin d'être parcourue. La matrice d'entrée est également établie comme étant Hermitienne, ce qui permet de limiter l'espace mémoire. 
-
-P stockée en vecteur ? Voir avec Téo
-
-Les `views` sont utilisées pour limiter le nombre d'allocations et des boucles sont aussi utilisées à plusieurs endroits pour éviter le stockage de vecteurs complets. Pour les pivots de taille $2\times 2$, le complément de Schur est calculé via son expression algébrique pour encore une fois éviter une allocation de vecteur. Il en va de même pour la mise à jour de $L$ dans le cas $2\times 2$.
-
-La fonction `extract_lb` permet de récupérer les matrices $B$ et $L$ issue de l'une ou l'autres des implémentations de la factorisation (Bunch-Parlett, Bunch-Kaufman ou *rook pivoting*.)
+La différence entre les processus de Bunch-Parlett et Bunch-Kaufman repose dans le choix du pivot, soit de la permutation $P_k$. Le tout sera exploré plus en détail dans les prochaines sections.
 
 ## Bunch-Parlett
+
 La stratégie de Bunch-Parlett pour le choix du pivot est aussi appelée *pivotage complet*. Elle se base sur les valeurs maximales des entrées de la matrice sur et hors diagonal. Le choix du pivot est effectué comme suit;
 
 > Poser   $\alpha = (1+ \sqrt{17})/8$
@@ -172,7 +119,7 @@ $$ \left(\begin{array}{ccccccc}
     	\vdots  &  &  &  &  &  & \ddots \\
   \end{array}\right)$$ 
   
-Il est intéressant de regarder de plus près la valeur de $\alpha$ et la manière dont cette dernière est obtenue. Elle est dérivée directement de la borne sur les éléments des blocs de $B$, elle-même issue des valeurs maximales contenues dans $A$. Comme cette valeur est reprise dans les processus de Bunch-Kaufman ainsi que dans l'alternative du *rook pivoting*, nous trouvons pertinent d'en présenter la brève dérivation ici. 
+Il est intéressant de regarder de plus près la valeur de $\alpha$ et la manière dont cette dernière est obtenue. Elle est dérivée directement de la borne sur les éléments des blocs de $B$, elle-même issue des valeurs maximales contenues dans $A$. Comme cette valeur est reprise dans les processus de Bunch-Kaufman ainsi que dans l'alternative du *rook pivoting*, nous trouvons pertinent d'en présenter la brève dérivation ici. À noter que la dérivation s'effectue de manière semblable pour les deux autres processus et mène au même résultat.
 
 ### Dérivation de $\alpha$
 
@@ -298,6 +245,8 @@ $$ \left(\begin{array}{cccccc}
     	\vdots  &  & vdots &  &  &  \\
   \end{array}\right)$$ 
 
+### Pseudo-code
+
 Pour l'implémentation, on reprend la majorité de ce qui a été fait pour Bunch-Parlett, mais en ajustant le choix de $p$. Le pseudo-code suivant est ce qui a été suivi pour l'implémentation. 
 
 \begin{algorithm}[H]
@@ -362,7 +311,7 @@ $k = 1$ \;
 \caption{Factorisation de Bunch-Kaufman (pivotage partiel)}
 \end{algorithm}
 
-## Rook pivoting
+## *Rook pivoting*
 
 La stratégie de *Rook pivoting* est utilisée lorsque l'on veut éviter que la norme de $L$ soit trop grande (ce qui peut générer des instabilités dans certains algorithmes.) Plusieurs éléments du processus sont les mêms que pour Bunch-Kaufman, mais le processus comporte une portion itérative. Le choix du pivot est effectué comme suit;
 
@@ -403,6 +352,8 @@ La stratégie de *Rook pivoting* est utilisée lorsque l'on veut éviter que la 
 >>>>>> $i=r$, $\omega_i=\omega_r$
 
 Si un pivot $1\times 1$ est trouvé, le pivot est choisi directement. Sinon, le processus cherche un pivot $a_{ri}$ tel que $|a_{ri}|$ est le maximum dans la rangée $r$ et le maximum dans la colonne $i$. 
+
+### Pseudo-code
 
 Le pseudo-code est encore une fois semblable à celui des processus précédent, à la différence de la boucle `while` utilisée dans le choix du pivot.
 
@@ -468,23 +419,101 @@ $k = 1$ \;
 \caption{Factorisation avec rook-pivoting}
 \end{algorithm}
 
-# Résultats de tests et applications
+# Implémentation 
 
-La fonction suivante implémente la factorisation de Bunch-Parlett (pivotage complet.)
+## Stratégies d'optimisation
+
+Différentes stratégies ont été adoptées pour optimiser les performances des fonctions créées, autant d'un point de vue mémoire que vitesse d'exécution.
+
+Tout d'abord, pour se conformer aux normes présentent dans Julia, deux versions de chaque processus a été implantée, soit une version renvoyant les matrices $L$, $B$ et $P$ au sein d'une `struct` et une autre modificant la matrice en place $A$ - le nom de cette dernière contient ainsi un `!` pour signifier la modification des éléments d'entrée. 
+
+Pour limiter le nombre d'allocations dans la seconde version, les matrices $B$ et $L$ sont stockées directement aux emplacements mémoire de $A$ tout au long de la factorisation. Dans le schéma suivant, les blocs bleus représentent les blocs de la matrice $B$ et les verts, les colonnes de la matrices $L$. Toutes les valeurs au dessus de la diagonale de bloc sont mises à $0$.
+
+$$ A = \left(\begin{array}{ccccccc}
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+    \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
+  \end{array}\right) \to \left(\begin{array}{ccccccc}
+    \x \Box  & 0  & 0 & 0 & 0 & 0 & 0 \\
+    \y \Box   & \x \Box  & \x \Box & 0 & 0 & 0 & 0 \\
+    \y \Box   & \x \Box   & \x \Box & 0 & 0 & 0 & 0 \\
+    \y \Box   & \y \Box   & \y \Box  & \x \Box & 0 & 0 & 0 \\
+    \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & \x \Box & 0 \\
+    \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & \x \Box & 0 \\
+    \y \Box  &  \y \Box  & \y \Box & \y \Box & \y \Box & \y \Box & \x \Box \\
+  \end{array}\right) $$ 
+
+On peut facilement extraire les matrices $B$ et $L$ de cette forme, puisque la taille des blocs est implicitement indiquée par la présente de valeurs ou de 0 sur la première diagonale supérieur (juste au dessus de la diagonale principale.) Une fonction a été créer pour permettre à l'utilisateur de le faire directement, `extract_L_and_B`. 
+
+Dans les deux versions, la symmétrie de la matrice est également exploitée pour diminuer le temps d'exécution. En effet, lors de la recherche des valeurs maximales hors diagonales (pour Bunch-Parlett), seul la moitié de la matrice a besoin d'être parcourue. La matrice d'entrée est également établie comme étant Hermitienne, ce qui permet de limiter l'espace mémoire. Les permutations effectuées sont également stockées dans un vecteur $P$ plutôt que dans une matrice de permutation complète.
+
+Les `views` sont utilisées pour limiter le nombre d'allocations et des boucles sont aussi utilisées à plusieurs endroits pour éviter le stockage de vecteurs complets. Pour les pivots de taille $2\times 2$, le complément de Schur est calculé via son expression algébrique pour encore une fois éviter une allocation de vecteur. Il en va de même pour la mise à jour de $L$ dans le cas $2\times 2$.
+
+## Bunch-Parlett
+
+Les fonctions suivantes implémentent la factorisation de Bunch-Parlett (pivotage complet) selon les deux approches mentionnées précédemment.
+
 ```{julia}
-{{< include lbl_complete_pivoting.jl >}}
+{{< include Bunch_Parlett.jl >}}
 ```
 
-La fonction suivante implémente la factorisation de Bunch-Kaufman (pivotage partiel.)
+## Bunch-Kaufman
+
+Les fonctions suivantes implémentent la factorisation de Bunch-Kaufman (pivotage partiel) selon les deux approches mentionnées précédemment.
 
 
-Finalement, la fonction suivante implémente la factorisation avec *rook pivoting*.
+## *Rook pivoting*
 
-# Comparaison des processus
+Les fonctions suivantes implémentent la factorisation avec *rook pivoting* selon les deux approches mentionnées précédemment.
 
-## Théorique
+# Tests et performances
 
-Un théorème permet d'assurer la stabilité du processus de Bunch-Kaufman.Ce théorème assure que pour $(A+\Delta A)\hat{x}=b$ la solution du système $\hat{x}$, la perturbation sur la norme de $A$ est bornée supérieurement comme $\parallel \Delta A\parallel_M \le p(n)\rho_n u\parallel A\parallel_M + O(u^2)$ où $p$ est quadratique. Ce résultat s'applique si le système est résolu par élimination gaussienne ou en utilisant l'inverse. Aucun résultat semblable n'est associé à Bunch-Parlett.
+Deux types de tests ont été effectués sur les implémentations. Les premières séries de tests visent à valider que les factorisations fonctionnent sur un ensemble de type de données, soit des `Float64`, des `ComplexF64` et finalement des `BigFloat`. La seconde série de tests vise à évaluer et comparer les performances des différentes implémentations.
+
+## Type de données
+
+Les fonctions suivantes servent de manière générale dans les tests qui suivent. 
+
+```{julia}
+function extract_P(vec_P)
+    P = Matrix{Int}(I, n, n)
+    P = P[vec_P, :]
+    return P
+end
+
+function perm_line_vec_P(M, vec_P)
+    return M[vec_P, :]
+end
+
+function perm_column_vec_P(M, vec_P)
+    return M[:, vec_P]
+end
+
+function transpose_vec_P(vec_P)
+    n = size(vec_P, 1)
+    vec_P_tranposed = zeros(Int, n)
+    for i in 1:n
+        vec_P_tranposed[vec_P[i]] = i
+    end
+    return vec_P_tranposed
+end
+```
+
+Voici la série de tests sur le processus de Bunch-Parlett.
+
+```{julia}
+{{< include Tests_Bunch-Parlett.jl >}}
+```
+
+# Discussion 
+
+## Comparaison des processus
+
+D'un point de vue théorique, un théorème permet d'assurer la stabilité du processus de Bunch-Kaufman.Ce théorème assure que pour $(A+\Delta A)\hat{x}=b$ la solution du système $\hat{x}$, la perturbation sur la norme de $A$ est bornée supérieurement comme $\parallel \Delta A\parallel_M \le p(n)\rho_n u\parallel A\parallel_M + O(u^2)$ où $p$ est quadratique. Ce résultat s'applique si le système est résolu par élimination gaussienne ou en utilisant l'inverse. Aucun résultat semblable n'est associé à Bunch-Parlett.
 
 Pour tous les processus d'intérêt dans ce projet, un autre résultat intéressant est le suivant:
 
@@ -492,13 +521,40 @@ $$ \frac{\parallel x-\hat{x}\parallel_\infty}{\parallel x \parallel_\infty} \le 
 
 $\text{cond}(|D| |L^T|)$ n'est pas borné pour le pivotage partiel, mais il l'est pour le *rook pivoting* et cette méthode est donc en théorie moins sensible à un $A$ initial moins bien conditionné. 
 
-## Selon nos essais
+## Comparaison avec l'implémentation Julia
 
-# Difficultés rencontrées
+## Difficultés rencontrées
 
-# Échéancier à jour
+# Retour sur les objectifs
+
+Les objectifs principaux du projet, pour débuter, sont tels que donné dans l'énoncé;
+
+1. Comprendre et documenter les factorisations de Bunch-Parlett et Bunch-Kaufman (pivotage complet et pivotage partiel.) Fournir des exemples, des schémas explicatifs, faire des liens avec les éléments vus en classe.
+  - Voir la section Description du projet et la section Implémentation. La description des factorisations précède le pseudo-code des deux fonctions ainsi que le code lui-même. 
+  - Quelques schémas y sont utilisés pour illustrer les stratégies de pivot.
+  - Un schéma dans la section Stratégies d'optimitisation illustre le stockage de la factorisation de façon compacte. 
+
+2. Implémenter ces deux factorisation ainsi que l'alternative du *rook pivoting*. Les comparer et identifier leurs avantages et leurs inconvénients respectifs. 
+  - Pour le pivotage complet, on s'attend à au plus $n^3/6$ comparaisons pour le choix de $p$. (to check)
+  - Pour le pivotage partiel, on s'attend à $O(n^2)$ comparaisons pour le choix de $p$. (to check)
+  - Pour le *rook pivoting*, on s'attend à entre $O(n^2)$ et $O(n^3)$ comparaisons pour le choix de $p$ (to check)
+  - Les implémentations dans Julia nous donnerons le référent pour le nombre de flops des implémentations complètes. (to check)
+
+  - L'implémentation de chaque processus est décrite dans la section Implémentation. 
+  - La sous-section Stratégies d'optimitisation explique comment les fonctions ont été optimisées pour réduire le temps d'exécution ainsi que le nombre d'allocation.
+  - La section Comparaison des processus compare les 3 processus entre eux ainsi que d'un point de vue théorique.
+
+3. Comparer nos implémentations à celles déjà disponibles dans Julia et tenter d'identifier les sources possibles des différences observées.
+  - Julia possède une fonction de base dans LinearAlgebra appelée ```BunchKaufman```. La fonction retourne trois matrices, $D$, $U$ et $p$. (to check)
+  - Nous n'avons pour l'instant pas trouvé d'implémentation de Bunch-Parlett en Julia (pas dans les fonctions de base du moins.) (to check)
+    
+4. Joindre la factorisation à des méthodes de résolution de systèmes linéaires. 
+
+5. Appliquer l'implémentation à un ensemble de problèmes modèles ainsi qu'à un problème plus spécifique au choix.
+  - Nous savons que Julia possède des Packages dédiés à l'optimisation et des 'lots' de problèmes d'optimisation de base, qui peuvent être utiles pour faire du Benchmarking et comparer différentes approches. Nous verrons si ces éléments peuvent servir dans notre cas ou pas. 
 
 Sur le temps total du projet ($\sim$ 20h), 15% du temps est prévu être alloué à l'étape 1, 50% à l'étape 2 et 3 qui peuvent être faites en parallèle, puisque diverses stratégies sont implémentées, 20% à l'étape 4 et 15% à l'étape 5. En effet, une portion de temps significative doit être allouée à la revue de littérature afin d'acquérir une compréhension solide sur laquelle construire le projet. De plus, il est attendu que la validation et l'optimisation de performance, qui sont des aspects importants des étapes 2 et 3, en plus de l'implémentation en tant que telle, représente un défi majeur afin d'obtenir des implémentations optimisées. Une grande portion du temps  doit donc être allouée à ces étapes. Les recherches pour intégrer ces factorisations dans les différentes méthodes de résolution de système linéaire sera probablement le deuxième défi le plus important, suivi par la création de problèmes de tests robustes et adaptés. Ainsi, un peu plus du temps restant est alloué à l'étape 4 qu'à l'étape 5.
+
 
 # Références
 
