@@ -472,42 +472,14 @@ Les fonctions suivantes implémentent la factorisation avec *rook pivoting* selo
 
 # Tests et performances
 
-Deux types de tests ont été effectués sur les implémentations. Les premières séries de tests visent à valider que les factorisations fonctionnent sur un ensemble de type de données, soit des `Float64`, des `ComplexF64` et finalement des `BigFloat`. La seconde série de tests vise à évaluer et comparer les performances des différentes implémentations.
+Trois types de tests ont été effectués sur les implémentations. Les premières séries de tests visent à valider que les factorisations fonctionnent sur un ensemble de type de données, soit des `Float64`, des `ComplexF64` et finalement des `BigFloat`. La seconde série de tests vise à évaluer et comparer les performances des différentes implémentations. Finalement, la dernière série vise à utiliser la factorisation pour la résolution de différents systèmes de point de selle.
 
 ## Type de données
 
-Les fonctions suivantes servent de manière générale dans les tests qui suivent. 
+## Benchmarking
 
-```{julia}
-function extract_P(vec_P)
-    P = Matrix{Int}(I, n, n)
-    P = P[vec_P, :]
-    return P
-end
+## Résolution de systèmes
 
-function perm_line_vec_P(M, vec_P)
-    return M[vec_P, :]
-end
-
-function perm_column_vec_P(M, vec_P)
-    return M[:, vec_P]
-end
-
-function transpose_vec_P(vec_P)
-    n = size(vec_P, 1)
-    vec_P_tranposed = zeros(Int, n)
-    for i in 1:n
-        vec_P_tranposed[vec_P[i]] = i
-    end
-    return vec_P_tranposed
-end
-```
-
-Voici la série de tests sur le processus de Bunch-Parlett.
-
-```{julia}
-{{< include Tests_Bunch-Parlett.jl >}}
-```
 
 # Discussion 
 
