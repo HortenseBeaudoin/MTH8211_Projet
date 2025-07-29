@@ -1,6 +1,6 @@
 ---
 title: "Factorisation de Bunch-Parlett et Bunch-Kaufman"
-subtitle: "MTH8211 - Projet phase 1"
+subtitle: "MTH8211 - Projet phase 2"
 author:
   - name: Hortense Beaudoin et Téo Dumoutier
     email: hortense.beaudoin@polymtl.ca et teo.dumoutier@polymtl.ca
@@ -22,20 +22,25 @@ format:
       - margin=1in
     papersize: letter
     colorlinks: true
+    number-sections: true
     urlcolor: blue
 engine: julia
 ---
-# Table of Contents
 
-1. [Description du projet](#Description-du-projet)
-2. [Théorie](#Théorie)
-3. [Implémentation](#Implémentation)
-4. [Tests et performances](#Tests-et-performances)
-5. [Discussion](#Discussion)
-6. [Retour sur les objectifs](#Retour-sur-les-objectifs)
+@sec-description . Description du projet 
+
+@sec-theorie . Théorie
+
+@sec-implementation . Implémentation
+
+@sec-tests . Tests et performance
+
+@sec-discussion . Discussion
+
+@sec-objectifs . Retour sur les objectifs
 
 
-# Description du projet
+# Description du projet {#sec-description}
 
 Si on tente de résoudre un système $Ax=b$ où $A$ est dense, plusiques solutions existent, mais une majorité sont très coûteuses. La décomposition QR et la SVD existent pour toute matrice $A$, y compris les matrices indéfinies (i.e il existe $x$ t.q $x^TAx\le 0$ et il existe $y$ t.q $y^TAy\ge 0$), mais elles n'exploitent pas forcément la structure du système à résoudre. 
 
@@ -57,7 +62,7 @@ $A$ est symétrique et si $\epsilon< 1$, indéfinie. On remarque que dans le cas
 
 Ce projet va donc plutôt s'intéresser aux factorisations de Bunch-Parlett et Bunch-Kaufman, qui exploitent toutes deux l'idée de permutation mentionnée précédemment. La mise en place algébrique étant la même dans les deux cas, nous allons dès maintenant la présenter brièvement.
 
-# Théorie
+# Théorie {#sec-theorie}
 ## Factorisation en bloc pour matrices symétriques
 
 Tel que mentionné ci-dessus, toute matrice $A\in\mathbb{C}^{n\times n}$ symétrique non-nulle peut être permutée de la manière suivante:
@@ -419,13 +424,13 @@ $k = 1$ \;
 \caption{Factorisation avec rook-pivoting}
 \end{algorithm}
 
-# Implémentation 
+# Implémentation {#sec-implementation}
 
-## Stratégies d'optimisation
+## Stratégies d'optimisation {#sec-strategies}
 
 Différentes stratégies ont été adoptées pour optimiser les performances des fonctions créées, autant d'un point de vue mémoire que vitesse d'exécution.
 
-Tout d'abord, pour se conformer aux normes présentent dans Julia, deux versions de chaque processus a été implantée, soit une version renvoyant les matrices $L$, $B$ et $P$ au sein d'une `struct` et une autre modificant la matrice en place $A$ - le nom de cette dernière contient ainsi un `!` pour signifier la modification des éléments d'entrée. 
+Tout d'abord, pour se conformer aux normes présentent dans Julia, deux versions de chaque processus a été implanté, soit une version renvoyant les matrices $L$, $B$ et $P$ au sein d'une `struct` et une autre modifiant la matrice en place $A$ - le nom de cette dernière contient ainsi un `!` pour signifier la modification des éléments d'entrée. 
 
 Pour limiter le nombre d'allocations dans la seconde version, les matrices $B$ et $L$ sont stockées directement aux emplacements mémoire de $A$ tout au long de la factorisation. Dans le schéma suivant, les blocs bleus représentent les blocs de la matrice $B$ et les verts, les colonnes de la matrices $L$. Toutes les valeurs au dessus de la diagonale de bloc sont mises à $0$.
 
@@ -439,25 +444,29 @@ $$ A = \left(\begin{array}{ccccccc}
     \Box  & \Box  & \Box & \Box & \Box & \Box & \Box \\
   \end{array}\right) \to \left(\begin{array}{ccccccc}
     \x \Box  & 0  & 0 & 0 & 0 & 0 & 0 \\
-    \y \Box   & \x \Box  & \x \Box & 0 & 0 & 0 & 0 \\
+    \y \Box   & \x \Box  & 0 & 0 & 0 & 0 & 0 \\
     \y \Box   & \x \Box   & \x \Box & 0 & 0 & 0 & 0 \\
     \y \Box   & \y \Box   & \y \Box  & \x \Box & 0 & 0 & 0 \\
-    \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & \x \Box & 0 \\
+    \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & 0 & 0 \\
     \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & \x \Box & 0 \\
     \y \Box  &  \y \Box  & \y \Box & \y \Box & \y \Box & \y \Box & \x \Box \\
   \end{array}\right) $$ 
 
-On peut facilement extraire les matrices $B$ et $L$ de cette forme, puisque la taille des blocs est implicitement indiquée par la présente de valeurs ou de 0 sur la première diagonale supérieur (juste au dessus de la diagonale principale.) Une fonction a été créer pour permettre à l'utilisateur de le faire directement, `extract_L_and_B`. 
+Pour être en mesure d'extraire les matrices $B$ et $L$ de cette matrice $A$ finale, la position des blocs de taille $2\times 2$ est stockée dans un vecteur. Une fonction a été créer pour permettre à l'utilisateur d'extraire $B$ et $L$ à partir de ce vecteur et de la matrice $A$, `extract_L_and_B_from_LBL_inplace`. 
 
-Dans les deux versions, la symmétrie de la matrice est également exploitée pour diminuer le temps d'exécution. En effet, lors de la recherche des valeurs maximales hors diagonales (pour Bunch-Parlett), seul la moitié de la matrice a besoin d'être parcourue. La matrice d'entrée est également établie comme étant Hermitienne, ce qui permet de limiter l'espace mémoire. Les permutations effectuées sont également stockées dans un vecteur $P$ plutôt que dans une matrice de permutation complète.
+Dans les deux versions, la symétrie de la matrice est également exploitée pour diminuer le temps d'exécution. En effet, lors de la recherche des valeurs maximales hors diagonales (pour Bunch-Parlett), seule la moitié de la matrice a besoin d'être parcourue. La matrice d'entrée est également établie comme étant Triangulaire inférieure, ce qui permet de limiter l'espace mémoire. Les permutations effectuées sont stockées dans un vecteur $P$ plutôt que dans une matrice de permutation complète.
 
 Les `views` sont utilisées pour limiter le nombre d'allocations et des boucles sont aussi utilisées à plusieurs endroits pour éviter le stockage de vecteurs complets. Pour les pivots de taille $2\times 2$, le complément de Schur est calculé via son expression algébrique pour encore une fois éviter une allocation de vecteur. Il en va de même pour la mise à jour de $L$ dans le cas $2\times 2$.
+
+? Autres ajouts Téo ?
+
+Finalement, il est à noter que la notation `i_diagonal` a été préférée à $k$ dans le code pour éviter toute confusion avec la troisième dimension typique en physique ou avec un indice de boucle. Le plein potentiel de la notation Latex ($\alpha$, $\mu$, etc.) n'a pas non plus exploitée, puisque ces symboles n'apparaissent pas lors de la production des rapports Quarto. 
 
 ## Bunch-Parlett
 
 Les fonctions suivantes implémentent la factorisation de Bunch-Parlett (pivotage complet) selon les deux approches mentionnées précédemment.
 
-```{julia}
+```
 {{< include Bunch_Parlett.jl >}}
 ```
 
@@ -465,23 +474,126 @@ Les fonctions suivantes implémentent la factorisation de Bunch-Parlett (pivotag
 
 Les fonctions suivantes implémentent la factorisation de Bunch-Kaufman (pivotage partiel) selon les deux approches mentionnées précédemment.
 
+```
+{{< include Bunch_Kaufman.jl >}}
+```
 
 ## *Rook pivoting*
 
 Les fonctions suivantes implémentent la factorisation avec *rook pivoting* selon les deux approches mentionnées précédemment.
 
-# Tests et performances
+```
+{{< include Rook_Pivoting.jl >}}
+```
+
+# Tests et performances {#sec-tests}
 
 Trois types de tests ont été effectués sur les implémentations. Les premières séries de tests visent à valider que les factorisations fonctionnent sur un ensemble de type de données, soit des `Float64`, des `ComplexF64` et finalement des `BigFloat`. La seconde série de tests vise à évaluer et comparer les performances des différentes implémentations. Finalement, la dernière série vise à utiliser la factorisation pour la résolution de différents systèmes de point de selle.
 
+Dans le fichier `Code`, la section *Utilitaire* liste plusieurs des fonctions nécessaires au roulement de ces tests, en particulier les tests sur le type de données. Les tests sont ensuite présentés dans l'ordre mentionnés, suite aux implémentations. 
+
 ## Type de données
+
+Pour tester les fonctions sur différents types de données, 25 matrices de forme 
+
+$$ K = \begin{bmatrix} I & A \\ A^* & 0 \end{bmatrix} $$
+
+sont créées l'une après l'autre, où $A$ est aléatoire et de taille $50\times 25$. Les matrices sont factorisées et le résultat de la factorisation $P^TLBL^TP$ est comparé à $A$ via la norme de leur différence. La tolérance des tests est de $1E-10$. Il est aussi validé que le type des données contenues dans $L$ et $B$ est le même que celui des éléments de $A$. Toutes les implémentations passent les tests en ce qui concerne le type de données supportées. (à vérifier, rook)
 
 ## Benchmarking
 
-## Résolution de systèmes
+La même approche que celle décrite à la section précédente est utilisée pour effectuer le `Benchmarking` des différentes implémentations, soit une matrice $K$ de taille $75\times 75$ construite à partir d'une matrice $A$ aléatoire. La factorisation est aussi effectuée en utilisant la fonction `bunchkaufman` de Julia, qui provient de LAPACK. L'option `rook` de cette dernière devait être testée, mais elle ne semble pas fonctionner - la documentation en ligne est peut-être erronnée.  Les résultats obtenus sont présentés dans la cellule ci-dessous et les résultats commentés dans la section Discussion.
 
+```
+Performance de bunch_parlett:
+ - Allocations : 816
+ - Temps d'exécution : 1.1071260762331838e7
+Performance de bunch_parlett!:
+ - Allocations : 807
+ - Temps d'exécution : 1.052149978858351e7
+Performance de bunch_kaufman:
+ - Allocations : 18
+ - Temps d'exécution : 9.03371e6
+Performance de bunch_kaufman!:
+ - Allocations : 10
+ - Temps d'exécution : 9.7168259765625e6
+Performance de bunch_kaufman_rook:
+ - Allocations : 22
+ - Temps d'exécution : 9.522212092130518e6
+Performance de bunch_kaufman_rook!:
+ - Allocations : 14
+ - Temps d'exécution : 9.978934607645875e6
+Performance de bunchkaufman LAPACK:
+ - Allocations : 73
+ - Temps d'exécution : 6.522576152832675e6
+Performance de bunchkaufman! LAPACK:
+ - Allocations : 67
+ - Temps d'exécution : 6.170483395755306e6
+```
 
-# Discussion 
+## Résolution de systèmes aux moindres carrés
+
+Pour la résolution de systèmes, deux types de tests sont effectués. D'abord, des systèmes symétriques indéfinis aléatoires construits de la même manière que pour les deux autres séries de tests. Les vecteurs $b$ sont définis de manière aléatoire et les solutions obtenues sont comparées aux solutions obtenues par factorisation `qr`. La définition de la fonction `\` a été étendue pour spécifiquement s'appliquer au format des problèmes qui nous intéressent.
+
+```
+{{< include Resol_systemes.jl >}}
+```
+
+Les tests sont effectués sur 100 problèmes aléatoires différents et l'erreur moyenne sur $x$ est présentées ci-dessous. 
+
+```
+Average error on solution:
+ - bunch_parlett : 2.1726034227706443e-72
+ - bunch_parlett! : 2.1726034227706443e-72
+ - bunch_kaufman : 1.5621733916746804e-76
+ - bunch_kaufman! : 1.5621733916746804e-76
+ - bunch_kaufman_rook : 4.789401571869194e-74
+ - bunch_kaufman_rook! : 4.789401571869194e-74
+ - bunch_kaufman de LAPACK : 2.841496814172852e-76
+ - bunch_kaufman! de LAPACK : 2.841496814172852e-76
+```
+
+Ensuite, quatre problèmes issus de `MatrixMarket` sont résolus avec les différentes approches, soient `ch5-5-b1`, `ch4-4-b1`, `ch4-4-b2` et `n3c5-b2`. Les systèmes de point de selle sont générées comme dans les sections précédentes, mais en incluant cette fois une légère perturbation dans le bloc inférieur droit des matrices $K$. Les résultats obtenus sont présentés ci-dessous. 
+
+```
+Error on residual for ch5-5-b1 :
+ - bunch_parlett : 0.0
+ - bunch_parlett! : 0.0
+ - bunch_kaufman : 6.3377057450964e-6
+ - bunch_kaufman! : 6.3377057450964e-6
+ - bunch_kaufman_rook : 6.3377057450964e-6
+ - bunch_kaufman_rook! : 6.3377057450964e-6
+Error on residual for ch4-4-b1 :
+ - bunch_parlett : 0.0
+ - bunch_parlett! : 0.0
+ - bunch_kaufman : 0.00047481804281535034
+ - bunch_kaufman! : 0.00047481804281535034
+ - bunch_kaufman_rook : 0.00047481804281535034
+ - bunch_kaufman_rook! : 0.00047481804281535034
+Error on residual for ch4-4-b2 :
+ - bunch_parlett : 0.0
+ - bunch_parlett! : 0.0
+ - bunch_kaufman : 8.881784197001252e-16
+ - bunch_kaufman! : 8.881784197001252e-16
+ - bunch_kaufman_rook : 0.0
+ - bunch_kaufman_rook! : 0.0
+Error on residual for n3c5-b2 :
+ - bunch_parlett : 0.0
+ - bunch_parlett! : 0.0
+ - bunch_kaufman : 0.0
+ - bunch_kaufman! : 0.0
+ - bunch_kaufman_rook : 0.0
+ - bunch_kaufman_rook! : 0.0
+Average error on residual:
+ - bunch_parlett : 0.0
+ - bunch_parlett! : 0.0
+ - bunch_kaufman : 0.00012028893714033373
+ - bunch_kaufman! : 0.00012028893714033373
+ - bunch_kaufman_rook : 0.00012028893714011168
+ - bunch_kaufman_rook! : 0.00012028893714011168
+```
+
+# Discussion {#sec-discussion}
 
 ## Comparaison des processus
 
@@ -493,39 +605,41 @@ $$ \frac{\parallel x-\hat{x}\parallel_\infty}{\parallel x \parallel_\infty} \le 
 
 $\text{cond}(|D| |L^T|)$ n'est pas borné pour le pivotage partiel, mais il l'est pour le *rook pivoting* et cette méthode est donc en théorie moins sensible à un $A$ initial moins bien conditionné. 
 
-## Comparaison avec l'implémentation Julia
+Du point de vue de nos résultats, le `Benchmarking` indique que nos implémentations effectue la factorisation avec moins d'allocations que la version de LAPACK, les rendant ainsi pratiquement aussi rapide que ces dernières pour des matrices de petites tailles. Le nombre d'allocation est semblable pour les 3 stratégies de pivotage, avec les version `!` en nécessitant évidemment moins dans tous les cas. 
+
+Du point de vue du temps d'exécutions, il était attendu que Bunch-Parlett soit le processus demandant le plus grand nombre de *flop* et c'est bien la méthode avec le plus long temps d'exécution. 
+
+Dans la résolution de problèmes aux moindre carrés, notre implémentation de Bunch-Kaufman affiche une erreur inférieure à celle obtenue avec l'implémentation de LAPACK. Bunch-Parlett présente la plus grande erreur, mais la différence demeure minime en `Big Float`. Les versions renvoyant les matrices $L$ et $B$ directement et celle stockant les valeurs dans $A$ donnent la même erreur. C'est aussi le cas de l'implémentation en LAPACK, ce qui nous indique que c'est bien le comportement attendu. 
+
+Pour les problèmes issus de `MatrixMarket`, il y a une plus grande différences dans les résultats. Pour l'ensemble des problèmes, Bunch-Parlett présente le résidu le plus faible, inférieur à l'epsilon machine. Pour les deux premiers problèmes, les implémentations de Bunch-Kaufman et de *rook pivoting* présentent les mêmes erreurs assez élevées. Il est difficile d'identifier pourquoi; les deux premiers problèmes sont ceux créés à partir des matrices au nombre de conditionnement de plus bas, mais aux normes les plus élevées. Le noyau des matrices $A$ des deux problèmes est aussi de taille 1, ce qui n'est pas le cas des deux derniers problèmes, pour lesquels la dimension du noyau est plus élevée. 
 
 ## Difficultés rencontrées
 
-# Retour sur les objectifs
+# Retour sur les objectifs {#sec-objectifs}
 
-Les objectifs principaux du projet, pour débuter, sont tels que donné dans l'énoncé;
+La majorité des objectifs du projet sont accomplis avec la remise de la phase 2. 
 
 1. Comprendre et documenter les factorisations de Bunch-Parlett et Bunch-Kaufman (pivotage complet et pivotage partiel.) Fournir des exemples, des schémas explicatifs, faire des liens avec les éléments vus en classe.
-  - Voir la section Description du projet et la section Implémentation. La description des factorisations précède le pseudo-code des deux fonctions ainsi que le code lui-même. 
-  - Quelques schémas y sont utilisés pour illustrer les stratégies de pivot.
-  - Un schéma dans la section Stratégies d'optimitisation illustre le stockage de la factorisation de façon compacte. 
+  - Voir la section @sec-description et la section @sec-theorie. 
 
 2. Implémenter ces deux factorisation ainsi que l'alternative du *rook pivoting*. Les comparer et identifier leurs avantages et leurs inconvénients respectifs. 
-  - Pour le pivotage complet, on s'attend à au plus $n^3/6$ comparaisons pour le choix de $p$. (to check)
-  - Pour le pivotage partiel, on s'attend à $O(n^2)$ comparaisons pour le choix de $p$. (to check)
-  - Pour le *rook pivoting*, on s'attend à entre $O(n^2)$ et $O(n^3)$ comparaisons pour le choix de $p$ (to check)
-  - Les implémentations dans Julia nous donnerons le référent pour le nombre de flops des implémentations complètes. (to check)
-
-  - L'implémentation de chaque processus est décrite dans la section Implémentation. 
-  - La sous-section Stratégies d'optimitisation explique comment les fonctions ont été optimisées pour réduire le temps d'exécution ainsi que le nombre d'allocation.
-  - La section Comparaison des processus compare les 3 processus entre eux ainsi que d'un point de vue théorique.
+  - Voir la section @sec-implementation et la section @sec-discussion.
+  - Le nombre de flop lui-même n'a pas été comparé directement, d'un point de vue numérique.
+  - La sous-section @sec-strategies explique comment les fonctions ont été optimisées pour réduire le temps d'exécution ainsi que le nombre d'allocation.
 
 3. Comparer nos implémentations à celles déjà disponibles dans Julia et tenter d'identifier les sources possibles des différences observées.
-  - Julia possède une fonction de base dans LinearAlgebra appelée ```BunchKaufman```. La fonction retourne trois matrices, $D$, $U$ et $p$. (to check)
-  - Nous n'avons pour l'instant pas trouvé d'implémentation de Bunch-Parlett en Julia (pas dans les fonctions de base du moins.) (to check)
+  - Voir la section @sec-tests. 
+  - Il a été confirmé qu'aucune implémentation de Bunch-Parlett n'existe dans Julia.
+  - L'option *rook pivoting* devait être testée, mais ne fonctionnait pas lors de nos tests.
     
 4. Joindre la factorisation à des méthodes de résolution de systèmes linéaires. 
+  - Voir la section @sec-tests, plus spécifiquement la redéfinition de la fonction `\`.
 
 5. Appliquer l'implémentation à un ensemble de problèmes modèles ainsi qu'à un problème plus spécifique au choix.
-  - Nous savons que Julia possède des Packages dédiés à l'optimisation et des 'lots' de problèmes d'optimisation de base, qui peuvent être utiles pour faire du Benchmarking et comparer différentes approches. Nous verrons si ces éléments peuvent servir dans notre cas ou pas. 
+  - Voir la section @sec-tests.
+  - Différents problèmes ont été créés avec des matrices aléatoires ainsi qu'avec des matrices connues et définies. 
 
-Sur le temps total du projet ($\sim$ 20h), 15% du temps est prévu être alloué à l'étape 1, 50% à l'étape 2 et 3 qui peuvent être faites en parallèle, puisque diverses stratégies sont implémentées, 20% à l'étape 4 et 15% à l'étape 5. En effet, une portion de temps significative doit être allouée à la revue de littérature afin d'acquérir une compréhension solide sur laquelle construire le projet. De plus, il est attendu que la validation et l'optimisation de performance, qui sont des aspects importants des étapes 2 et 3, en plus de l'implémentation en tant que telle, représente un défi majeur afin d'obtenir des implémentations optimisées. Une grande portion du temps  doit donc être allouée à ces étapes. Les recherches pour intégrer ces factorisations dans les différentes méthodes de résolution de système linéaire sera probablement le deuxième défi le plus important, suivi par la création de problèmes de tests robustes et adaptés. Ainsi, un peu plus du temps restant est alloué à l'étape 4 qu'à l'étape 5.
+Tel qu'attendu, la majorité du temps a été alloué à l'optimisation des implémentations en Julia et à la revue de littérature. Cette dernière a couvert à la fois la théorie derrière la factorisation et les normes de codage en Julia. Le fait de pouvoir réutiliser des portions de code pour chaque implémentation ainsi que pour les tests a permis de réduire un peu le temps passé sur ces éléments. 
 
 
 # Références
