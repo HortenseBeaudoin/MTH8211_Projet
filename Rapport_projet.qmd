@@ -164,7 +164,7 @@ Il s'agit d'une dérivation assez simple d'une valeur reprise dans chacune des i
 
 ### Pseudo-code
 
-Pour l'implémentation, on combine le choix de $p$ à la mise en place de base du problème, vue dans la première section du rapport. Le pseudo-code suivant illustre la stratégie d'implémentation "in-place" de cet algorithme, présentée dans la section `Implémentation`.
+Pour l'implémentation, on combine le choix de $p$ à la mise en place de base du problème, vue dans la première section du rapport. Le pseudo-code suivant illustre la stratégie d'implémentation *in-place* de cet algorithme, présentée dans la @sec-implementation.
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
@@ -254,7 +254,7 @@ $$ \left(\begin{array}{cccccc}
 
 ### Pseudo-code
 
-Pour l'implémentation, on reprend la majorité de ce qui a été fait pour Bunch-Parlett, mais en ajustant le choix de $p$. Le pseudo-code suivant illustre la stratégie d'implémentation "in-place" de cet algorithme, présentée dans la section `Implémentation`.
+Pour l'implémentation, on reprend la majorité de ce qui a été fait pour Bunch-Parlett, mais en ajustant le choix de $p$. Le pseudo-code suivant illustre la stratégie d'implémentation *in-place* de cet algorithme, présentée dans la @sec-implementation.
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
@@ -362,7 +362,7 @@ Si un pivot $1\times 1$ est trouvé, le pivot est choisi directement. Sinon, le 
 
 ### Pseudo-code
 
-Le pseudo-code est encore une fois semblable à celui des processus précédent, à la différence de la boucle `while` utilisée dans le choix du pivot. Il illustre la stratégie d'implémentation "in-place" de cet algorithme, présentée dans la section `Implémentation`.
+Le pseudo-code est encore une fois semblable à celui des processus précédent, à la différence de la boucle `while` utilisée dans le choix du pivot. Il illustre la stratégie d'implémentation *in-place* de cet algorithme, présentée dans la @sec-implementation.
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
@@ -578,7 +578,7 @@ Les fonctions suivantes implémentent la factorisation avec *rook pivoting* selo
 
 # Tests et performances {#sec-tests}
 
-Trois types de tests ont été effectués sur les implémentations :  
+Trois types de tests ont été effectués sur les implémentations:  
 
 1. La validité des factorisations ainsi que leur compatibilité avec différents types de données (`Float64`, `ComplexF64` et `BigFloat`) est établie.  
 2. Les performances (nombre d'allocations et temps d'exécution) des différentes implémentations sont caractérisées à l'aide du module `BenchmarkTools`.  
@@ -596,7 +596,7 @@ sont créées l'une après l'autre, où $A$ est aléatoire et de taille $50\time
 
 ## Benchmarking
 
-Similairement à précédemment, une matrice $K$ de taille $75\times 75$ est construite à partir d'une matrice $A$ aléatoire. Celle-ci est utilisée en entrée pour effectuer le `Benchmarking` des différentes implémentations. La factorisation est également effectuée en utilisant la fonction `bunchkaufman` de Julia, qui appelle LAPACK. L'option `rook` de cette dernière devait être testée, mais elle ne semble pas être reconnue par la fonction - il semble y avoir un décalage entre la documentation en ligne et le code source de la version de Julia utilisée ici. Les résultats obtenus sont présentés dans la cellule ci-dessous et les résultats commentés dans la section Discussion.
+Similairement à précédemment, une matrice $K$ de taille $75\times 75$ est construite à partir d'une matrice $A$ aléatoire. Celle-ci est utilisée en entrée pour effectuer le `Benchmarking` des différentes implémentations. La factorisation est également effectuée en utilisant la fonction `bunchkaufman` de Julia, qui appelle LAPACK. L'option `rook` de cette dernière devait être testée, mais elle ne semble pas être reconnue par la fonction - il semble y avoir un décalage entre la documentation en ligne et le code source de la version de Julia utilisée ici. Les résultats obtenus sont présentés dans la cellule ci-dessous et les résultats commentés dans la @sec-discussion.
 
 ```
 Performance de bunch_parlett:
@@ -648,7 +648,7 @@ Average error on solution:
  - bunch_kaufman! de LAPACK : 2.7855703676639216e-76
 ```
 
-Ensuite, quatre problèmes issus de `MatrixMarket` (`Suite Sparse Collection`) sont résolus avec les différentes implémentations, soient `ch5-5-b1`, `ch4-4-b1`, `ch4-4-b2` et `n3c5-b2`. Les systèmes de point de selle sont générées comme dans les sections précédentes, mais en incluant cette fois-ci une légère perturbation dans le bloc inférieur droit des matrices $K$ lorsqu'il s'agit de résoudre avec les fonctions `bunchkaufman` et `bunchkaufman!` standards de Julia. En effet, autrement celles-ci lèvent une exception de singularité pour certains problèmes. En effet, ces problèmes ne sont pas tous de rang plein, et ainsi la résolution par factorisation ne retourne pas nécessairement la solution de moindre norme. De ce fait, la norme du résidu du problème au moindre carré est comparée. Les résultats obtenus sont présentés ci-dessous. 
+Ensuite, quatre problèmes issus de `MatrixMarket` (`Suite Sparse Collection`) sont résolus avec les différentes implémentations, soient `ch5-5-b1`, `ch4-4-b1`, `ch4-4-b2` et `n3c5-b2`. Les systèmes de point de selle sont générées comme dans les sections précédentes, mais en incluant cette fois-ci une légère perturbation dans le bloc inférieur droit des matrices $K$ lorsqu'il s'agit de résoudre avec les fonctions `bunchkaufman` et `bunchkaufman!` standards de Julia. En effet, autrement, celles-ci lèvent une exception de singularité pour certains problèmes. Ces problèmes ne sont pas tous de rang plein et ainsi la résolution par factorisation ne retourne pas nécessairement la solution de moindre norme. C'est donc la norme du résidu du problème au moindre carré qui est comparée dans ces tests. Les résultats obtenus sont présentés ci-dessous. 
 
 ```
 Average error on residual for ch5-5-b1 :
@@ -701,23 +701,23 @@ $$ \frac{\parallel x-\hat{x}\parallel_\infty}{\parallel x \parallel_\infty} \le 
 
 $\text{cond}(|D| |L^T|)$ n'est pas borné pour le pivotage partiel, mais il l'est pour le *rook pivoting* et cette méthode est donc en théorie moins sensible à un $A$ initial moins bien conditionné. 
 
-D'un point de vue expérimental, on observe d'abord que toutes les implémentations de ces factorisations permettent de reconstruire la matrice A en entrée avec une précision au moins de $1e^{-8}$, et ce pour divers types de données. Qui plus est, les matrices $L$ et $B$ sont respectivement bel et bien triangulaire inférieure et hermitienne tridiagonale. Les implémentations semblent donc valides.
+D'un point de vue expérimental, on observe d'abord que toutes les implémentations de ces factorisations permettent de reconstruire la matrice $A$ en entrée avec une précision d'au moins $1e^{-8}$ et ce, pour divers types de données. Qui plus est, les matrices $L$ et $B$ sont respectivement triangulaire inférieure et hermitienne tridiagonale. Les implémentations semblent donc valides.
 
-Ensuite, le `Benchmarking` indique qu'elles effectuent la factorisation avec moins d'allocations que les versions standard de Julia qui appellent LAPACK. Elles semblent donc très bien optimisées par rapport aux allocations. De plus, pour chaque algorithme de factorisation, la version `!` génère bel et bien moins d'allocations que la version avec une `struct`, ce qui est attendu. Dans le contexte présent, on note qu'il est impossible de n'avoir aucune allocation, car il y a toujours quelques objets dont la création est nécessaire (vecteur permutation, vecteur de position des blocs 2x2, etc.). Qui plus est, le reste des allocations n'ayant pas été éliminées semblent être généré lors de certaines exécutions d'opérations -= pourtant effectuées éléments par éléments dans des boucles `for`. Ces opérations ne semblent pas pouvoir être optimisées davantage, et il est assez surprenant qu'elles soient parfois source d'allocations. Peut-être est-ce lié à ce que les fonctions de `BenchmarkTools` considèrent comme une allocation et à la manière dont elles les détectent et les identifient.
+Ensuite, le `Benchmarking` indique qu'elles effectuent la factorisation avec moins d'allocations que les versions standard de Julia qui appellent LAPACK. Elles semblent donc très bien optimisées par rapport aux allocations. De plus, pour chaque algorithme de factorisation, la version `!` génère bel et bien moins d'allocations que la version avec une `struct`, ce qui est attendu. Dans le contexte présent, on note qu'il est impossible de n'avoir aucune allocation, car il y a toujours quelques objets dont la création est nécessaire (vecteur permutation, vecteur de position des blocs $2\times 2$, etc.). Qui plus est, le reste des allocations n'ayant pas été éliminées semblent être généré lors de certaines exécutions d'opérations `-=` pourtant effectuées éléments par éléments dans des boucles `for`. Ces opérations ne semblent pas pouvoir être optimisées davantage et il est assez surprenant qu'elles soient parfois source d'allocations. Peut-être est-ce lié à ce que les fonctions de `BenchmarkTools` considèrent comme une allocation et à la manière dont elles les détectent et les identifient.
 
 Par ailleurs, on remarque que les implémentations sont pratiquement aussi rapides que celles de Julia appelant LAPACK pour des matrices $75 \times 75$, donc relativement de petite taille. Puisque LAPACK est en `Fortan` et est ainsi optimisé pour la performance, il était attendu que les implémentations standard en Julia soit plus rapides. Toutefois, il est intéressant de constater que la différence de vitesse n'est pas si significative pour une telle taille matricielle. Bien qu'il reste à tester cela sur des matrices de plus grande taille, ceci indique que les implémentations sont bien optimisées en performance, surtout considérant qu'elles utilisent moins d'allocations, ce qui est d'ailleurs un facteur qui peut contribuer à améliorer la temps d'exécution. En outre, on remarque que Bunch-Parlett est plus lent que Bunch-Kaufman avec *Rook Pivoting*, qui est plus lent que Bunch-Kaufman classique. Ceci est attendu, car Bunch-Parlett utilise une vérification plus exhaustive des valeurs absolues maximales au sein de la matrice et possède des opérations de double permutation au sein d'une même itération. En comparaison, Bunch-Kaufman avec *Rook Pivoting* possède aussi des opérations de double permutation, mais utilise la vérification allégée des valeurs absolues maximales propre à Bunch-Kaufman. Bunch-Kaufman classique possède aussi cette vérification allégée, mais n'a en plus que des opérations de permutation simple.
 
-Pour la résolution de problèmes aux moindre carrés aléatoires, l'erreur comparativement à celle trouvée par factorisation `qr` est d'abord extrêmement faible pour toutes les implémentations. Ceci indique leur validité dans la résolution de système linéaire. On remarque même que l'erreur de l'implémentation de Bunch-Kaufman est inférieure à celle obtenue avec l'implémentation de LAPACK, ce qui suggère même une plus grande précision. Bunch-Parlett et Bunch-Kaufman avec *Rook Pivoting* présentent une plus grande erreur, bien la différence demeure minime en `Big Float`. Peut-être Bunch-Kaufman classique est-il plus efficace sur des problèmes aléatoires et ainsi probablement bien conditionnés. De plus, pour chaque implémentation, les versions `struct` et `!` ont la même erreur, y compris pour l'implémentation LAPACK. Ceci est attendu puisque la factorisation est la même dans les deux cas.
+Pour la résolution de problèmes aux moindre carrés aléatoires, l'erreur comparativement à celle trouvée par factorisation `qr` est d'abord extrêmement faible pour toutes les implémentations. Ceci indique leur validité dans la résolution de système linéaire. On remarque même que l'erreur de l'implémentation de Bunch-Kaufman est inférieure à celle obtenue avec l'implémentation de LAPACK, ce qui suggère une plus grande précision. Bunch-Parlett et Bunch-Kaufman avec *Rook Pivoting* présentent une plus grande erreur, bien que la différence demeure minime en `Big Float`. Peut-être Bunch-Kaufman classique est-il plus efficace sur des problèmes aléatoires et ainsi probablement bien conditionnés. De plus, pour chaque implémentation, les versions `struct` et `!` ont la même erreur, y compris pour l'implémentation LAPACK. Ceci est attendu puisque la factorisation est la même dans les deux cas.
 
 Pour les problèmes aux moindres carrés issus de `MatrixMarket`, l'erreur moyenne sur le résidu est tellement faible qu'elle tombe à 0 presque tout le temps. Les seules exceptions concernent Bunch-Kaufman avec ou sans *rook pivoting* pour `ch5-5-b1` et `ch4-4-b1`, bien que les erreurs soient quand même extrêmement faibles. Il est difficile d'identifier précisément pourquoi; les deux premiers problèmes sont ceux créés à partir des matrices aux nombres de conditionnement les plus bas, mais aux normes les plus élevées. Le noyau des matrices $A$ de ces deux problèmes est aussi de taille 1, ce qui n'est pas le cas des deux derniers problèmes, pour lesquels la dimension du noyau est plus élevée. Sur ces deux premiers problèmes, on observe également que Bunch-Parlett est plus précis que Bunch-Kaufman, ce qui peut s'expliquer étant donné la vérification plus exhaustive des valeurs absolues maximales qu'utilise Bunch-Parlett. Tout ceci renforce la validité dans la résolution de systèmes linéaires.
 
 ## Difficultés rencontrées
 
-Trois difficultées principales ont été rencontrées :  
+Trois difficultées principales ont été rencontrées:  
 
 1. Afin d'effectuer la factorisation en chaîne sur les différents compléments de Schur sujets à des permutations, et de ramener cesdites permutations dans un seul opérateur de permutation qui s'applique à l'ensemble du bloc $LBL'$, il est nécessaire de permuter les lignes de $L$ de façon appropriée au cours de la factorisation. Cela n'est pas nécessairement évident à première vue, et n'est pas toujours explicité dans les sources bibliogaphiques. Ceci se fait explicitement dans la version `struct`, et se fait en permutant directement les éléments des colonnes antérieures de $A$ dans la version `!`.  
 
-2. Afin d'effectuer des permutations des lignes et des colonnes dans une matrice hermitienne dans laquelle seul le triangle inférieur est stocké, il est nécessaire d'adapter l'opération de permutation de façon séquentielle, en permutant parfois une partie de ligne avec une partie de colonne. En effet, puisque le triangle supérieur est le transposé conjugué du triangle inférieur, ses colonnes sont en fait les lignes du triangle inférieur et inversement. Ceci est effectué élément par élément sans allocation grâce à la fonction `perm_r1_et_r2!`.  
+2. Afin d'effectuer des permutations de lignes et de colonnes dans une matrice hermitienne dans laquelle seul le triangle inférieur est stocké, il est nécessaire d'adapter l'opération de permutation de façon séquentielle, en permutant parfois une partie de ligne avec une partie de colonne. En effet, puisque le triangle supérieur est le transposé conjugué du triangle inférieur, ses colonnes sont en fait les lignes du triangle inférieur et inversement. Ceci est effectué élément par élément sans allocation grâce à la fonction `perm_r1_et_r2!`.  
 
 ```{julia}
 #| output: false
@@ -748,7 +748,7 @@ function perm_r1_et_r2!(M, r1::Int, r2::Int)
 end
 ```
 
-3. Afin d'optimiser le nombre d'allocations, il a fallu investiguer précisément chaque portion de code afin d'identifier ce qui en générait. Ceci semble avoir révélé que parfois, de simples opérations comme .*= appliqué sur une view, ou encore un calcul dans lequel se retrouve à la fois des variables et des fonctions comme `abs` ou `conj` appliquées à des variables, sont sources d'allocations. Le tout a donc dû être optimisé au peigne fin, avec beaucoup de recours aux boucles `for` et de création de variables intermédiaires.  
+3. Afin d'optimiser le nombre d'allocations, il a fallu investiguer précisément chaque portion de code afin d'identifier ce qui en générait. Ceci semble avoir révélé que parfois, de simples opérations comme `.*=` appliquées sur une *view*, ou encore un calcul dans lequel se retrouve à la fois des variables et des fonctions comme `abs` ou `conj` appliquées à des variables, sont sources d'allocations. Le tout a donc dû être optimisé au peigne fin, avec beaucoup de recours aux boucles `for` et à la création de variables intermédiaires.  
 
 # Retour sur les objectifs {#sec-objectifs}
 
