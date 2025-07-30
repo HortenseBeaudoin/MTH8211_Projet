@@ -58,7 +58,7 @@ function \(F::LBL{T}, b::AbstractVector{T}) where T
 
     # Permuter x_perm : x = P' * x_perm
     x = similar(b)
-    x[vec_P] = x_perm  # Inverse de P est P' car P est une permutation
+    x[vec_P] = x_perm  # Inverse de P est P', car P est une permutation
 
     return x
 end

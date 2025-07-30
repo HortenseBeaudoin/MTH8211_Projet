@@ -1,6 +1,6 @@
 function bunch_kaufman_rook(A::LowerTriangular)
     """
-    Factorise A selon la factorisation LBL' de Bunch-Kaufman, qui utilise la technique du 'rook pivoting'.
+    Factorise A selon la factorisation LBL' de Bunch-Kaufman, qui utilise la technique de pivotage partiel
         Entrée : - Matrice A carrée, hermitienne et indéfinie
         Sortie : - Structure qui contient :
                     - Matrice L triangulaire inférieure
@@ -195,9 +195,9 @@ function bunch_kaufman_rook!(A::LowerTriangular)
     """
     Modifie A sous la forme compacte de la factorisation LBL' de Bunch-Kaufman, qui utilise la technique du 'rook pivoting'.
     L et B sont stockés en écrasant A, où L se situe en dessous des éléments blocs diagonaux de B.
-    Entrée : - Matrice A carrée, hermitienne et indéfinie
-    Sortie : - Vecteur de permutation vec_P
-             - Vecteur de position des blocs diagonaux 2x2 vec_2by2
+        Entrée : - Matrice A carrée, hermitienne et indéfinie
+        Sortie : - Vecteur de permutation vec_P
+                - Vecteur de position des blocs diagonaux 2x2 vec_2by2
     """
     n = size(A, 1)
     vec_P = collect(1:n)
