@@ -14,7 +14,7 @@ function bunch_kaufman(A::LowerTriangular)
     L = LowerTriangular(Matrix{T}(I, n, n))
     vec_P = collect(1:n)
 
-    alpha = (1 + sqrt(17))/8
+    α = (one(T) + sqrt(T(17))) / T(8)
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -22,18 +22,18 @@ function bunch_kaufman(A::LowerTriangular)
         n_ = size(A_, 1)
 
         ### Choix du pivot et pivotage
-        w_1 = -1.0
+        ω₁ = -one(T)
         r = 1
         for i in 2:n_
             magnitude_a_i1 = abs(A_[i, 1])
-            if magnitude_a_i1 > w_1
-                w_1 = magnitude_a_i1
+            if magnitude_a_i1 > ω₁
+                ω₁ = magnitude_a_i1
                 r = i
             end
         end
 
         magnitude_a_11 = abs(A_[1, 1])
-        if magnitude_a_11 >= alpha*w_1  # E de taille 1, P ne permute rien
+        if magnitude_a_11 >= α*ω₁  # E de taille 1, P ne permute rien
             # Déterminant de E
             a_11_conj = conj(A_[1, 1])
             inv_det_E = a_11_conj/magnitude_a_11^2
@@ -59,21 +59,21 @@ function bunch_kaufman(A::LowerTriangular)
             # Prochain bloc
             i_diagonal += 1
         else
-            w_r = -1.0
+            ωᵣ = -one(T)
             for j in 1:r-1
                 magnitude_a_ir = abs(A_[r, j])
-                if magnitude_a_ir > w_r
-                    w_r = magnitude_a_ir
+                if magnitude_a_ir > ωᵣ
+                    ωᵣ = magnitude_a_ir
                 end
             end
             for i in r+1:n_
                 magnitude_a_ir = abs(A_[i, r])
-                if magnitude_a_ir > w_r
-                    w_r = magnitude_a_ir
+                if magnitude_a_ir > ωᵣ
+                    ωᵣ = magnitude_a_ir
                 end
             end
 
-            if magnitude_a_11*w_r >= alpha*w_1^2  # E de taille 1, P ne permute rien
+            if magnitude_a_11*ωᵣ >= α*ω₁^2  # E de taille 1, P ne permute rien
                 # Déterminant de E
                 a_11_conj = conj(A_[1, 1])
                 inv_det_E = a_11_conj/magnitude_a_11^2
@@ -100,7 +100,7 @@ function bunch_kaufman(A::LowerTriangular)
                 i_diagonal += 1
             else
                 magnitude_a_rr = abs(A_[r, r])
-                if magnitude_a_rr >= alpha*w_r  # E de taille 1, P permute 1 et r
+                if magnitude_a_rr >= α*ωᵣ  # E de taille 1, P permute 1 et r
                     # Permutation dans A_
                     perm_r1_et_r2!(A_, 1, r)
 
@@ -205,10 +205,11 @@ function bunch_kaufman!(A::LowerTriangular)
                 - Vecteur de position des blocs diagonaux 2x2 vec_2by2
     """
     n = size(A, 1)
+    T = eltype(A)
     vec_P = collect(1:n)
     vec_2by2 = Int[]
 
-    alpha = (1 + sqrt(17))/8
+    α = (one(T) + sqrt(T(17))) / T(8)
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -216,18 +217,18 @@ function bunch_kaufman!(A::LowerTriangular)
         n_ = size(A_, 1)
 
         ### Choix du pivot et pivotage
-        w_1 = -1.0
+        ω₁ = -one(T)
         r = 1
         for i in 2:n_
             magnitude_a_i1 = abs(A_[i, 1])
-            if magnitude_a_i1 > w_1
-                w_1 = magnitude_a_i1
+            if magnitude_a_i1 > ω₁
+                ω₁ = magnitude_a_i1
                 r = i
             end
         end
 
         magnitude_a_11 = abs(A_[1, 1])
-        if magnitude_a_11 >= alpha*w_1  # E de taille 1, P ne permute rien
+        if magnitude_a_11 >= α*ω₁  # E de taille 1, P ne permute rien
             # Déterminant de E
             a_11_conj = conj(A_[1, 1])
             inv_det_E = a_11_conj/magnitude_a_11^2
@@ -249,21 +250,21 @@ function bunch_kaufman!(A::LowerTriangular)
             # Prochain bloc
             i_diagonal += 1
         else
-            w_r = -1.0
+            ωᵣ = -one(T)
             for j in 1:r-1
                 magnitude_a_ir = abs(A_[r, j])
-                if magnitude_a_ir > w_r
-                    w_r = magnitude_a_ir
+                if magnitude_a_ir > ωᵣ
+                    ωᵣ = magnitude_a_ir
                 end
             end
             for i in r+1:n_
                 magnitude_a_ir = abs(A_[i, r])
-                if magnitude_a_ir > w_r
-                    w_r = magnitude_a_ir
+                if magnitude_a_ir > ωᵣ
+                    ωᵣ = magnitude_a_ir
                 end
             end
 
-            if magnitude_a_11*w_r >= alpha*w_1^2  # E de taille 1, P ne permute rien
+            if magnitude_a_11*ωᵣ >= α*ω₁^2  # E de taille 1, P ne permute rien
                 # Déterminant de E
                 a_11_conj = conj(A_[1, 1])
                 inv_det_E = a_11_conj/magnitude_a_11^2
@@ -286,7 +287,7 @@ function bunch_kaufman!(A::LowerTriangular)
                 i_diagonal += 1
             else
                 magnitude_a_rr = abs(A_[r, r])
-                if magnitude_a_rr >= alpha*w_r  # E de taille 1, P permute 1 et r
+                if magnitude_a_rr >= α*ωᵣ  # E de taille 1, P permute 1 et r
                     # Permutation dans A_
                     perm_r1_et_r2!(A_, 1, r)
 

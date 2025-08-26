@@ -14,7 +14,7 @@ function bunch_kaufman_rook(A::LowerTriangular)
     L = LowerTriangular(Matrix{T}(I, n, n))
     vec_P = collect(1:n)
 
-    alpha = (1 + sqrt(17))/8
+    α = (one(T) + sqrt(T(17))) / T(8)
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -22,18 +22,18 @@ function bunch_kaufman_rook(A::LowerTriangular)
         n_ = size(A_, 1)
 
         ### Choix du pivot et pivotage
-        w_1 = -1.0
+        ω₁ = -one(T)
         r = 1
         for i in 2:n_
             magnitude_a_i1 = abs(A_[i, 1])
-            if magnitude_a_i1 > w_1
-                w_1 = magnitude_a_i1
+            if magnitude_a_i1 > ω₁
+                ω₁ = magnitude_a_i1
                 r = i
             end
         end
 
         magnitude_a_11 = abs(A_[1, 1])
-        if magnitude_a_11 >= alpha*w_1  # E de taille 1, P ne permute rien
+        if magnitude_a_11 >= α*ω₁  # E de taille 1, P ne permute rien
             # Déterminant de E
             a_11_conj = conj(A_[1, 1])
             inv_det_E = a_11_conj/magnitude_a_11^2
@@ -60,29 +60,29 @@ function bunch_kaufman_rook(A::LowerTriangular)
             i_diagonal += 1
         else
             index = 1
-            w_index = w_1
+            w_index = ω₁
             r_new = r
             repeat = true 
             while repeat
-                w_r = -1.0
+                ωᵣ = -one(T)
                 # Subdiagonal
                 for i in r+1:n_
                     magnitude_a_ir = abs(A_[i, r])
-                    if magnitude_a_ir > w_r
-                        w_r = magnitude_a_ir
+                    if magnitude_a_ir > ωᵣ
+                        ωᵣ = magnitude_a_ir
                         r_new = i
                     end
                 end
                 # Superdiagonal
                 for j in 1:r-1
                     magnitude_a_ir = abs(A_[r, j])
-                    if magnitude_a_ir > w_r
-                        w_r = magnitude_a_ir
+                    if magnitude_a_ir > ωᵣ
+                        ωᵣ = magnitude_a_ir
                     end
                 end
 
                 magnitude_a_rr = abs(A_[r, r])
-                if magnitude_a_rr >= alpha*w_r  # E de taille 1, P permute 1 et r
+                if magnitude_a_rr >= α*ωᵣ  # E de taille 1, P permute 1 et r
                     repeat = false
                     
                     # Permutation dans A_
@@ -120,7 +120,7 @@ function bunch_kaufman_rook(A::LowerTriangular)
                     
                     # Prochain bloc
                     i_diagonal += 1
-                elseif w_index == w_r  # E de taille 2, P permute 1 et index, puis 2 et r     
+                elseif w_index == ωᵣ  # E de taille 2, P permute 1 et index, puis 2 et r     
                     repeat = false
 
                     # Permutation dans A_
@@ -171,7 +171,7 @@ function bunch_kaufman_rook(A::LowerTriangular)
                     i_diagonal += 2
                 else
                     index = r
-                    w_index = w_r
+                    w_index = ωᵣ
                     r = r_new
                 end
             end
@@ -200,10 +200,11 @@ function bunch_kaufman_rook!(A::LowerTriangular)
                 - Vecteur de position des blocs diagonaux 2x2 vec_2by2
     """
     n = size(A, 1)
+    T = eltype(A)
     vec_P = collect(1:n)
     vec_2by2 = Int[]
 
-    alpha = (1 + sqrt(17))/8
+    α = (one(T) + sqrt(T(17))) / T(8)
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -211,18 +212,18 @@ function bunch_kaufman_rook!(A::LowerTriangular)
         n_ = size(A_, 1)
 
         ### Choix du pivot et pivotage
-        w_1 = -1.0
+        ω₁ = -one(T)
         r = 1
         for i in 2:n_
             magnitude_a_i1 = abs(A_[i, 1])
-            if magnitude_a_i1 > w_1
-                w_1 = magnitude_a_i1
+            if magnitude_a_i1 > ω₁
+                ω₁ = magnitude_a_i1
                 r = i
             end
         end
 
         magnitude_a_11 = abs(A_[1, 1])
-        if magnitude_a_11 >= alpha*w_1  # E de taille 1, P ne permute rien
+        if magnitude_a_11 >= α*ω₁  # E de taille 1, P ne permute rien
             # Déterminant de E
             a_11_conj = conj(A_[1, 1])
             inv_det_E = a_11_conj/magnitude_a_11^2
@@ -245,29 +246,29 @@ function bunch_kaufman_rook!(A::LowerTriangular)
             i_diagonal += 1
         else
             index = 1
-            w_index = w_1
+            w_index = ω₁
             r_new = r
             repeat = true 
             while repeat
-                w_r = -1.0
+                ωᵣ = -one(T)
                 # Subdiagonal
                 for i in r+1:n_
                     magnitude_a_ir = abs(A_[i, r])
-                    if magnitude_a_ir > w_r
-                        w_r = magnitude_a_ir
+                    if magnitude_a_ir > ωᵣ
+                        ωᵣ = magnitude_a_ir
                         r_new = i
                     end
                 end
                 # Superdiagonal
                 for j in 1:r-1
                     magnitude_a_ir = abs(A_[r, j])
-                    if magnitude_a_ir > w_r
-                        w_r = magnitude_a_ir
+                    if magnitude_a_ir > ωᵣ
+                        ωᵣ = magnitude_a_ir
                     end
                 end
 
                 magnitude_a_rr = abs(A_[r, r])
-                if magnitude_a_rr >= alpha*w_r  # E de taille 1, P permute 1 et r
+                if magnitude_a_rr >= α*ωᵣ  # E de taille 1, P permute 1 et r
                     repeat = false
 
                     # Permutation dans A_
@@ -301,7 +302,7 @@ function bunch_kaufman_rook!(A::LowerTriangular)
                     
                     # Prochain bloc
                     i_diagonal += 1
-                elseif w_index == w_r  # E de taille 2, P permute 1 et index, puis 2 et r
+                elseif w_index == ωᵣ  # E de taille 2, P permute 1 et index, puis 2 et r
                     repeat = false
 
                     push!(vec_2by2, i_diagonal)
@@ -350,7 +351,7 @@ function bunch_kaufman_rook!(A::LowerTriangular)
                     i_diagonal += 2
                 else
                     index = r
-                    w_index = w_r
+                    w_index = ωᵣ
                     r = r_new
                 end
             end

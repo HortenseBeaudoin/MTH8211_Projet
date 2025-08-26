@@ -24,6 +24,7 @@ format:
       - margin=1in
     papersize: letter
     colorlinks: true
+    monofont: JuliaMono
     number-sections: true
     urlcolor: blue
 engine: julia
@@ -50,7 +51,7 @@ Certaines structures symétriques sont fréquemment rencontrées lors de la rés
 
 $$\begin{bmatrix} I & A \\ A^T & 0 \end{bmatrix}\begin{bmatrix} r \\ x \end{bmatrix} = \begin{bmatrix} b \\ 0 \end{bmatrix}$$
 
-où la matrice formée de $A$ et $A^T$ est symétrique et toujours indéfinie. Sous cette forme, le bloc supérieur gauche est bien évidemment inversible, puisqu'il est égal à l'identité. De manière intéressante, toute autre matrice $B$ symétrique et indéfinie peut être permutée pour adopter une forme où le bloc supérieur gauche est inversible, soit
+où la matrice formée de $A$ et $A^T$ est symétrique et toujours indéfinie. Sous cette forme, le bloc supérieur gauche est bien évidemment inversible, puisqu'il est égal à l'identité. De manière intéressante, toute autre matrice $B$ non nulle et symétrique peut être permutée pour adopter une forme où le bloc supérieur gauche est inversible, soit
 
 $$PBP^T = \begin{bmatrix} E & C^T \\ C & D \end{bmatrix}$$
 
@@ -94,7 +95,7 @@ Et ainsi de suite. Les matrices $P$, $L$ et $B$ sont construites de la façon su
 $$P_{k+1} = P_{k+1}P_{k}\dots P_1$$
 $$L_{k+1} = \begin{bmatrix}I_{s_k} &  0 & 0 \\ (C_kE_k^{-1})[1:s_{k+1},1:s_{k+1}] & I_{s_{k+1}} & 0 \\ (C_kE_k^{-1})[s_{k+1}+1:n,1:s_{k+1}] & (C_{k+1}E_{k+1}^{-1}) & I_{n-(s_k+s_{k+1})}\end{bmatrix}$$$$B_{k+1} = \begin{bmatrix}E_k & 0 & 0 \\ 0 & E_{k+1} & 0 \\ 0 & 0 & A_{k+2}\end{bmatrix}$$
 
-La différence entre les processus de Bunch-Parlett et Bunch-Kaufman repose dans le choix du pivot, soit de la permutation $P_k$. Le tout sera exploré plus en détail dans les prochaines sections.
+où les $P$ et les $L$ alternent dans la construction (puisque les $L$ subissent aussi la permutation.) La différence entre les processus de Bunch-Parlett et Bunch-Kaufman repose dans le choix du pivot, soit de la permutation $P_k$. Le tout sera exploré plus en détail dans les prochaines sections.
 
 ## Bunch-Parlett
 
@@ -132,7 +133,7 @@ Il est intéressant de regarder de plus près la valeur de $\alpha$ et la maniè
 
 Dans le cas du pivot $1\times 1$, ce dernier est choisi si $\mu_1 \ge \alpha\mu_0$, i.e $\max_i|a_{ii}| \ge \alpha\max_{ij}|a_{ij}|$. Toutes les mises à jour de $A$ via le complément de Schur sont ainsi bornée; 
 
-$$ |a_{ij}| = |b_{ij} - c_{i1}\frac{1}{e_{11}}c_{1j} \le \mu_0 +\frac{\mu_0^2}{\mu_1} \le \left(1+\frac{1}{\alpha}\right)\mu_0 $$
+$$ |a_{ij}| = |b_{ij} - c_{i1}\frac{1}{e_{11}}c_{1j}| \le \mu_0 +\frac{\mu_0^2}{\mu_1} \le \left(1+\frac{1}{\alpha}\right)\mu_0 $$
 
 On peut borner les valeurs de $|a_{ij}|$ de manière semblable pour le cas du pivot $2\times 2$. On note cette fois le complément de Schur comme
 
@@ -156,7 +157,7 @@ $$|a_{ij}|\le \mu_0+\frac{1(1+\alpha)\mu_0^2}{(1-\alpha^2)\mu_0}=\left(1+\frac{2
 
 Finalement, pour obtenir la valeur de $\alpha$, le multiplicateur de $\mu_0$ dans la borne du pivot de $2\times 2$ est rendu équivalent à deux fois le multiplicateur de $\mu_0$ dans la borne du pivot de $1\times 1$, soit
 
-$$ \left(1+\frac{1}{\alpha}\right)^1 =  \left(1+\frac{2}{1-\alpha}\right)$$
+$$ \left(1+\frac{1}{\alpha}\right)^2 =  \left(1+\frac{2}{1-\alpha}\right)$$
 
 Ce système peut être résolu et mène à deux valeurs de $\alpha$, parmi lesquelles on choisi la valeur positive, qui est bien $\alpha=(1+\sqrt{17})/8$. 
 
@@ -476,10 +477,10 @@ $$ A = \left(\begin{array}{ccccccc}
   \end{array}\right) \to \left(\begin{array}{ccccccc}
     \x \Box  & 0  & 0 & 0 & 0 & 0 & 0 \\
     \y \Box   & \x \Box  & 0 & 0 & 0 & 0 & 0 \\
-    \y \Box   & \x \Box   & \x \Box & 0 & 0 & 0 & 0 \\
+    \y \Box   & 0   & \x \Box & 0 & 0 & 0 & 0 \\
     \y \Box   & \y \Box   & \y \Box  & \x \Box & 0 & 0 & 0 \\
     \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & 0 & 0 \\
-    \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & \x \Box & 0 \\
+    \y \Box  &  \y \Box  & \y \Box & \y \Box & 0 & \x \Box & 0 \\
     \y \Box  &  \y \Box  & \y \Box & \y \Box & \y \Box & \y \Box & \x \Box \\
   \end{array}\right) $$ 
 

@@ -14,7 +14,8 @@ function bunch_parlett(A::LowerTriangular)
     L = LowerTriangular(Matrix{T}(I, n, n))
     vec_P = collect(1:n)
 
-    alpha = (1 + sqrt(17))/8
+    
+    α = (one(T) + sqrt(T(17))) / T(8)
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -22,29 +23,29 @@ function bunch_parlett(A::LowerTriangular)
         n_ = size(A_, 1)
 
         ### Choix du pivot et pivotage
-        mu1 = -1.0
+        μ₁ = -one(T)
         r = 1
         for i in 1:n_
             magnitude_aii = abs(A_[i, i])
-            if magnitude_aii > mu1
-                mu1 = magnitude_aii
+            if magnitude_aii > μ₁
+                μ₁ = magnitude_aii
                 r = i
             end
         end
 
-        mu0 = -1.0
+        μ₀ = -one(T)
         p, q = 1, 1
         for i in 1:n_
             for j in i+1:n_
                 magnitude_aij = abs(A_[i, j])
-                if magnitude_aij > mu0
-                    mu0 = magnitude_aij
+                if magnitude_aij > μ₀
+                    μ₀ = magnitude_aij
                     p, q = i, j
                 end
             end
         end
 
-        if mu1 ≥ alpha * mu0  # E de taille 1, P permute 1 et r
+        if μ₁ ≥ α * μ₀  # E de taille 1, P permute 1 et r
             # Permutation dans A_
             perm_r1_et_r2!(A_, 1, r)
 
@@ -58,7 +59,7 @@ function bunch_parlett(A::LowerTriangular)
 
             # Déterminant de E
             a_11_conj = conj(A_[1, 1])
-            inv_det_E = a_11_conj/mu1^2
+            inv_det_E = a_11_conj/μ₁^2
 
             # Complément de Schur
             for i in 2:n_
@@ -152,10 +153,11 @@ function bunch_parlett!(A::LowerTriangular)
                 - Vecteur de position des blocs diagonaux 2x2 vec_2by2
     """
     n = size(A, 1)
+    T = eltype(A)
     vec_P = collect(1:n)
     vec_2by2 = Int[]
 
-    alpha = (1 + sqrt(17))/8
+    α = (one(T) + sqrt(T(17))) / T(8)
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -163,29 +165,29 @@ function bunch_parlett!(A::LowerTriangular)
         n_ = size(A_, 1)
 
         ### Choix du pivot et pivotage
-        mu1 = -1.0
+        μ₁ = -one(T)
         r = 1
         for i in 1:n_
             magnitude_aii = abs(A_[i, i])
-            if magnitude_aii > mu1
-                mu1 = magnitude_aii
+            if magnitude_aii > μ₁
+                μ₁ = magnitude_aii
                 r = i
             end
         end
 
-        mu0 = -1.0
+        μ₀ = -one(T)
         p, q = 1, 1
         for i in 1:n_
             for j in i+1:n_
                 magnitude_aij = abs(A_[i, j])
-                if magnitude_aij > mu0
-                    mu0 = magnitude_aij
+                if magnitude_aij > μ₀
+                    μ₀ = magnitude_aij
                     p, q = i, j
                 end
             end
         end
 
-        if mu1 ≥ alpha * mu0  # E de taille 1, P permute 1 et r
+        if μ₁ ≥ α * μ₀  # E de taille 1, P permute 1 et r
             # Permutation dans A_
             perm_r1_et_r2!(A_, 1, r)
 
@@ -199,7 +201,7 @@ function bunch_parlett!(A::LowerTriangular)
 
             # Déterminant de E
             a_11_conj = conj(A_[1, 1])
-            inv_det_E = a_11_conj/mu1^2
+            inv_det_E = a_11_conj/μ₁^2
 
             # Complément de Schur
             for i in 2:n_
