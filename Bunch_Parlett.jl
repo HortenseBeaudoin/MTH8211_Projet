@@ -11,11 +11,10 @@ function bunch_parlett(A::LowerTriangular)
     T = eltype(A)
     subdiagonal = zeros(T, n-1)
     diagonal = zeros(T, n)
-    L = LowerTriangular(Matrix{T}(I, n, n))
+    L = UnitLowerTriangular(Matrix{T}(I, n, n))
     vec_P = collect(1:n)
 
-    
-    α = (one(T) + sqrt(T(17))) / T(8)
+    α = abs(T((1 + sqrt(17))/8))
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -23,7 +22,7 @@ function bunch_parlett(A::LowerTriangular)
         n_ = size(A_, 1)
 
         ### Choix du pivot et pivotage
-        μ₁ = -one(T)
+        μ₁ = -abs(one(T))
         r = 1
         for i in 1:n_
             magnitude_aii = abs(A_[i, i])
@@ -33,7 +32,7 @@ function bunch_parlett(A::LowerTriangular)
             end
         end
 
-        μ₀ = -one(T)
+        μ₀ = -abs(one(T))
         p, q = 1, 1
         for i in 1:n_
             for j in i+1:n_
@@ -82,52 +81,52 @@ function bunch_parlett(A::LowerTriangular)
             # Prochain bloc
             i_diagonal += 1
         else  # E de taille 2, P permute 1 et p, puis 2 et q
-        # Permutation dans A_
-        perm_r1_et_r2!(A_, 1, p)
-        perm_r1_et_r2!(A_, 2, q)
+            # Permutation dans A_
+            perm_r1_et_r2!(A_, 1, p)
+            perm_r1_et_r2!(A_, 2, q)
 
-        # Permutation dans L
-        for j in 1:i_diagonal-1
-            L[i_diagonal, j], L[i_diagonal+p-1, j] = L[i_diagonal+p-1, j], L[i_diagonal, j]
-        end
-        for j in 1:i_diagonal-1
-            L[i_diagonal+1, j], L[i_diagonal+q-1, j] = L[i_diagonal+q-1, j], L[i_diagonal+1, j]
-        end
-                    
-        # Permutation dans P
-        vec_P[i_diagonal], vec_P[i_diagonal+p-1] = vec_P[i_diagonal+p-1], vec_P[i_diagonal]
-        vec_P[i_diagonal+1], vec_P[i_diagonal+q-1] = vec_P[i_diagonal+q-1], vec_P[i_diagonal+1]
-
-        # Déterminant de E
-        e_11, e_22, e_21 = A_[1, 1], A_[2, 2], A_[2, 1]
-        e_12 = conj(e_21)
-        det_E = (e_11*e_22 - e_21*e_12)
-        det_E_conj = conj(det_E)
-        magnitude_det_E = abs(det_E)
-        inv_det_E = det_E_conj/magnitude_det_E^2
-
-        # Complément de Schur
-        for i in 3:n_
-            a_i1, a_i2 = A_[i, 1], A_[i, 2]
-            for j in 3:i
-                a_j1_conj, a_j2_conj = conj(A_[j, 1]), conj(A_[j, 2])
-                A_[i, j] -= inv_det_E*((a_i1*e_22 - a_i2*e_21)*a_j1_conj + (a_i2*e_11 - a_i1*e_12)*a_j2_conj)
+            # Permutation dans L
+            for j in 1:i_diagonal-1
+                L[i_diagonal, j], L[i_diagonal+p-1, j] = L[i_diagonal+p-1, j], L[i_diagonal, j]
             end
-        end
+            for j in 1:i_diagonal-1
+                L[i_diagonal+1, j], L[i_diagonal+q-1, j] = L[i_diagonal+q-1, j], L[i_diagonal+1, j]
+            end
+                        
+            # Permutation dans P
+            vec_P[i_diagonal], vec_P[i_diagonal+p-1] = vec_P[i_diagonal+p-1], vec_P[i_diagonal]
+            vec_P[i_diagonal+1], vec_P[i_diagonal+q-1] = vec_P[i_diagonal+q-1], vec_P[i_diagonal+1]
 
-        # Calcul de B
-        subdiagonal[i_diagonal], subdiagonal[i_diagonal+1] = A_[2, 1], 0
-        diagonal[i_diagonal], diagonal[i_diagonal + 1] = A_[1, 1], A_[2, 2]
+            # Déterminant de E
+            e_11, e_22, e_21 = A_[1, 1], A_[2, 2], A_[2, 1]
+            e_12 = conj(e_21)
+            det_E = (e_11*e_22 - e_21*e_12)
+            det_E_conj = conj(det_E)
+            magnitude_det_E = abs(det_E)
+            inv_det_E = det_E_conj/magnitude_det_E^2
 
-        # Calcul de L
-        for i in i_diagonal + 2:n
-            a_i1, a_i2 = A[i, i_diagonal], A[i, i_diagonal+1]
-            L[i, i_diagonal] = inv_det_E*(a_i1*e_22 - a_i2*e_21)
-            L[i, i_diagonal+1] = inv_det_E*(a_i2*e_11 - a_i1*e_12)
-        end
+            # Complément de Schur
+            for i in 3:n_
+                a_i1, a_i2 = A_[i, 1], A_[i, 2]
+                for j in 3:i
+                    a_j1_conj, a_j2_conj = conj(A_[j, 1]), conj(A_[j, 2])
+                    A_[i, j] -= inv_det_E*((a_i1*e_22 - a_i2*e_21)*a_j1_conj + (a_i2*e_11 - a_i1*e_12)*a_j2_conj)
+                end
+            end
 
-        # Prochain bloc
-        i_diagonal += 2
+            # Calcul de B
+            subdiagonal[i_diagonal], subdiagonal[i_diagonal+1] = A_[2, 1], 0
+            diagonal[i_diagonal], diagonal[i_diagonal + 1] = A_[1, 1], A_[2, 2]
+
+            # Calcul de L
+            for i in i_diagonal + 2:n
+                a_i1, a_i2 = A[i, i_diagonal], A[i, i_diagonal+1]
+                L[i, i_diagonal] = inv_det_E*(a_i1*e_22 - a_i2*e_21)
+                L[i, i_diagonal+1] = inv_det_E*(a_i2*e_11 - a_i1*e_12)
+            end
+
+            # Prochain bloc
+            i_diagonal += 2
         end
     end
 
@@ -157,7 +156,7 @@ function bunch_parlett!(A::LowerTriangular)
     vec_P = collect(1:n)
     vec_2by2 = Int[]
 
-    α = (one(T) + sqrt(T(17))) / T(8)
+    α = abs(T((1 + sqrt(17))/8))
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -165,7 +164,7 @@ function bunch_parlett!(A::LowerTriangular)
         n_ = size(A_, 1)
 
         ### Choix du pivot et pivotage
-        μ₁ = -one(T)
+        μ₁ = -abs(one(T))
         r = 1
         for i in 1:n_
             magnitude_aii = abs(A_[i, i])
@@ -175,7 +174,7 @@ function bunch_parlett!(A::LowerTriangular)
             end
         end
 
-        μ₀ = -one(T)
+        μ₀ = -abs(one(T))
         p, q = 1, 1
         for i in 1:n_
             for j in i+1:n_

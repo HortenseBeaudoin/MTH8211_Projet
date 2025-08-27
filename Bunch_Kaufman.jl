@@ -11,10 +11,10 @@ function bunch_kaufman(A::LowerTriangular)
     T = eltype(A)
     subdiagonal = zeros(T, n-1)
     diagonal = zeros(T, n)
-    L = LowerTriangular(Matrix{T}(I, n, n))
+    L = UnitLowerTriangular(Matrix{T}(I, n, n))
     vec_P = collect(1:n)
 
-    α = (one(T) + sqrt(T(17))) / T(8)
+    α = abs(T((1 + sqrt(17))/8))
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -22,7 +22,7 @@ function bunch_kaufman(A::LowerTriangular)
         n_ = size(A_, 1)
 
         ### Choix du pivot et pivotage
-        ω₁ = -one(T)
+        ω₁ = -abs(one(T))
         r = 1
         for i in 2:n_
             magnitude_a_i1 = abs(A_[i, 1])
@@ -59,7 +59,7 @@ function bunch_kaufman(A::LowerTriangular)
             # Prochain bloc
             i_diagonal += 1
         else
-            ωᵣ = -one(T)
+            ωᵣ = -abs(one(T))
             for j in 1:r-1
                 magnitude_a_ir = abs(A_[r, j])
                 if magnitude_a_ir > ωᵣ
@@ -209,7 +209,7 @@ function bunch_kaufman!(A::LowerTriangular)
     vec_P = collect(1:n)
     vec_2by2 = Int[]
 
-    α = (one(T) + sqrt(T(17))) / T(8)
+    α = abs(T((1 + sqrt(17))/8))
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -217,7 +217,7 @@ function bunch_kaufman!(A::LowerTriangular)
         n_ = size(A_, 1)
 
         ### Choix du pivot et pivotage
-        ω₁ = -one(T)
+        ω₁ = -abs(one(T))
         r = 1
         for i in 2:n_
             magnitude_a_i1 = abs(A_[i, 1])
@@ -250,7 +250,7 @@ function bunch_kaufman!(A::LowerTriangular)
             # Prochain bloc
             i_diagonal += 1
         else
-            ωᵣ = -one(T)
+            ωᵣ = -abs(one(T))
             for j in 1:r-1
                 magnitude_a_ir = abs(A_[r, j])
                 if magnitude_a_ir > ωᵣ
