@@ -42,6 +42,10 @@ engine: julia
 
 @sec-objectifs . Retour sur les objectifs
 
+@sec-references . Références
+
+@sec-annexe . Annexe
+
 
 # Description du projet {#sec-description}
 
@@ -479,10 +483,10 @@ $$ A = \left(\begin{array}{ccccccc}
   \end{array}\right) \to \left(\begin{array}{ccccccc}
     \x \Box  & 0  & 0 & 0 & 0 & 0 & 0 \\
     \y \Box   & \x \Box  & 0 & 0 & 0 & 0 & 0 \\
-    \y \Box   & \x \Box   & \x \Box & 0 & 0 & 0 & 0 \\
+    \y \Box   & 0  & \x \Box & 0 & 0 & 0 & 0 \\
     \y \Box   & \y \Box   & \y \Box  & \x \Box & 0 & 0 & 0 \\
     \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & 0 & 0 \\
-    \y \Box  &  \y \Box  & \y \Box & \y \Box & \x \Box & \x \Box & 0 \\
+    \y \Box  &  \y \Box  & \y \Box & \y \Box & 0 & \x \Box & 0 \\
     \y \Box  &  \y \Box  & \y \Box & \y \Box & \y \Box & \y \Box & \x \Box \\
   \end{array}\right) $$ 
 
@@ -660,7 +664,7 @@ Average error on residual for n3c5-b2 :
 
 ## Implémentations
 
-D'un point de vue théorique, un théorème permet d'assurer la stabilité du processus de Bunch-Kaufman. Ce théorème assure que pour $(A+\Delta A)\hat{x}=b$ la solution du système $\hat{x}$, la perturbation sur la norme de $A$ est bornée supérieurement comme $\parallel \Delta A\parallel_M \le p(n)\rho_n u\parallel A\parallel_M + O(u^2)$ où $p$ est quadratique. Ce résultat s'applique si le système est résolu par élimination gaussienne ou en utilisant l'inverse. Aucun résultat semblable n'est associé à Bunch-Parlett.
+D'un point de vue théorique, un théorème permet d'assurer la stabilité du processus de Bunch-Kaufman. Ce théorème assure que pour $(A+\Delta A)\hat{x}=b$ la solution du système $\hat{x}$, la perturbation sur la norme de $A$ est bornée supérieurement comme $\parallel \Delta A\parallel_M \le p(n)\rho_n u\parallel A\parallel_M + O(u^2)$ où $p$ est quadratique. Ce résultat s'applique si le système est résolu par élimination gaussienne ou en utilisant l'inverse.
 
 Pour tous les processus d'intérêt dans ce projet, un autre résultat intéressant est le suivant:
 
@@ -744,7 +748,7 @@ La majorité des objectifs du projet sont accomplis avec la remise de la phase 2
 Tel qu'attendu, la majorité du temps a été alloué à l'optimisation des implémentations en Julia et à la revue de littérature. Cette dernière a couvert à la fois la théorie derrière la factorisation et les normes de codage en Julia. Le fait de pouvoir réutiliser des portions de code pour chaque implémentation ainsi que pour les tests a permis de réduire un peu le temps passé sur ces éléments. 
 
 
-# Références
+# Références {#sec-references}
 
 [1] : Nicholas J. Higham. Accuracy and Stability of Numerical Algorithms. Society for Industrial
       and Applied Mathematics, second edition, 2002. doi: 10.1137/1.9780898718027. URL
@@ -752,7 +756,7 @@ Tel qu'attendu, la majorité du temps a été alloué à l'optimisation des impl
 
 [Lien vers le dépôt Github du projet](https://github.com/HortenseBeaudoin/MTH8211_Projet)
 
-# Annexe
+# Annexe {#sec-annexe}
 ## Versions individuelles des algorithmes
 ### Bunch-Parlett
 

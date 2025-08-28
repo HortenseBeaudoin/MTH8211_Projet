@@ -1,73 +1,73 @@
-function choose_pivot_bunch_parlett(A_, n_, alpha, T)    
-    mu1 = -abs(one(T))
+function choose_pivot_bunch_parlett(A_, n_, α, T)    
+    μ₁ = -abs(one(T))
     r = 1
     # Diagonal
     for i in 1:n_
         magnitude_aii = abs(A_[i, i])
-        if magnitude_aii > mu1
-            mu1 = magnitude_aii
+        if magnitude_aii > μ₁
+            μ₁ = magnitude_aii
             r = i
         end
     end
 
-    mu0 = -abs(one(T))
+    μ₀ = -abs(one(T))
     p, q = 1, 1
     # Subdiagonal
     for i in 1:n_
         for j in i+1:n_
             magnitude_aij = abs(A_[i, j])
-            if magnitude_aij > mu0
-                mu0 = magnitude_aij
+            if magnitude_aij > μ₀
+                μ₀ = magnitude_aij
                 p, q = i, j
             end
         end
     end
 
-    if mu1 >= alpha * mu0
+    if μ₁ >= α * μ₀
         return (1, r), nothing  # E de taille 1, P permute 1 et r
     else
         return (1, p), (2, q)  # E de taille 2, P permute 1 et p, puis 2 et q
     end
 end
 
-function choose_pivot_bunch_kaufman(A_, n_, alpha, T)    
-    w_1 = -abs(one(T))
+function choose_pivot_bunch_kaufman(A_, n_, α, T)    
+    ω₁ = -abs(one(T))
     r = 1
     # First column
     for i in 2:n_
         magnitude_a_i1 = abs(A_[i, 1])
-        if magnitude_a_i1 > w_1
-            w_1 = magnitude_a_i1
+        if magnitude_a_i1 > ω₁
+            ω₁ = magnitude_a_i1
             r = i
         end
     end
 
     magnitude_a_11 = abs(A_[1, 1])
-    if magnitude_a_11 >= alpha * w_1
+    if magnitude_a_11 >= α * ω₁
         return nothing, nothing  # E de taille 1, P ne permute rien
     else
-        w_r = -abs(one(T))
+        ωᵣ = -abs(one(T))
         # Subdiagonal
         for i in r+1:n_
             magnitude_a_ir = abs(A_[i, r])
-            if magnitude_a_ir > w_r
-                w_r = magnitude_a_ir
+            if magnitude_a_ir > ωᵣ
+                ωᵣ = magnitude_a_ir
                 r_new = i
             end
         end
         # Superdiagonal
         for j in 1:r-1
             magnitude_a_ir = abs(A_[r, j])
-            if magnitude_a_ir > w_r
-                w_r = magnitude_a_ir
+            if magnitude_a_ir > ωᵣ
+                ωᵣ = magnitude_a_ir
             end
         end
 
-        if magnitude_a_11 * w_r >= alpha * w_1^2
+        if magnitude_a_11 * ωᵣ >= α * ω₁^2
             return nothing, nothing  # E de taille 1, P ne permute rien
         else
             magnitude_a_rr = abs(A_[r, r])
-            if magnitude_a_rr >= alpha * w_r
+            if magnitude_a_rr >= α * ωᵣ
                 return (1, r), nothing  # E de taille 1, P permute 1 et r
             else             
                 return (2, r), nothing  # E de taille 2, P permute 2 et r       
@@ -76,51 +76,51 @@ function choose_pivot_bunch_kaufman(A_, n_, alpha, T)
     end
 end
 
-function choose_pivot_bunch_kaufman_rook(A_, n_, alpha, T)    
-    w_1 = -abs(one(T))
+function choose_pivot_bunch_kaufman_rook(A_, n_, α, T)    
+    ω₁ = -abs(one(T))
     r = 1
     # First column
     for i in 2:n_
         magnitude_a_i1 = abs(A_[i, 1])
-        if magnitude_a_i1 > w_1
-            w_1 = magnitude_a_i1
+        if magnitude_a_i1 > ω₁
+            ω₁ = magnitude_a_i1
             r = i
         end
     end
 
     magnitude_a_11 = abs(A_[1, 1])
-    if magnitude_a_11 >= alpha * w_1
+    if magnitude_a_11 >= α * ω₁
         return nothing, nothing  # E de taille 1, P ne permute rien
     else
         index = 1
-        w_index = w_1
+        w_index = ω₁
         r_new = r
         while true
-            w_r = -abs(one(T))
+            ωᵣ = -abs(one(T))
             # Subdiagonal
             for i in r+1:n_
                 magnitude_a_ir = abs(A_[i, r])
-                if magnitude_a_ir > w_r
-                    w_r = magnitude_a_ir
+                if magnitude_a_ir > ωᵣ
+                    ωᵣ = magnitude_a_ir
                     r_new = i
                 end
             end
             # Superdiagonal
             for j in 1:r-1
                 magnitude_a_ir = abs(A_[r, j])
-                if magnitude_a_ir > w_r
-                    w_r = magnitude_a_ir
+                if magnitude_a_ir > ωᵣ
+                    ωᵣ = magnitude_a_ir
                 end
             end
 
             magnitude_a_rr = abs(A_[r, r])
-            if magnitude_a_rr >= alpha * w_r  # E de taille 1, P permute 1 et r
+            if magnitude_a_rr >= α * ωᵣ  # E de taille 1, P permute 1 et r
                 return (1, r), nothing
-            elseif w_index == w_r  # E de taille 2, P permute 1 et index, puis 2 et r     
+            elseif w_index == ωᵣ  # E de taille 2, P permute 1 et index, puis 2 et r     
                 return (1, index), (2, r)
             else
                 index = r
-                w_index = w_r
+                w_index = ωᵣ
                 r = r_new
             end
         end
@@ -147,7 +147,7 @@ function facto_LBL(A::LowerTriangular, pivoting_strategy::Int=1)
     L = UnitLowerTriangular(Matrix{T}(I, n, n))
     vec_P = collect(1:n)
 
-    alpha = abs(T((1 + sqrt(17))/8))
+    α = abs(T((1 + sqrt(17))/8))
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -156,11 +156,11 @@ function facto_LBL(A::LowerTriangular, pivoting_strategy::Int=1)
 
         ### Choix du pivot
         if pivoting_strategy === 1
-            pivot1, pivot2 = choose_pivot_bunch_parlett(A_, n_, alpha, T)
+            pivot1, pivot2 = choose_pivot_bunch_parlett(A_, n_, α, T)
         elseif pivoting_strategy === 2
-            pivot1, pivot2 = choose_pivot_bunch_kaufman(A_, n_, alpha, T)
+            pivot1, pivot2 = choose_pivot_bunch_kaufman(A_, n_, α, T)
         elseif pivoting_strategy === 3
-            pivot1, pivot2 = choose_pivot_bunch_kaufman_rook(A_, n_, alpha, T)
+            pivot1, pivot2 = choose_pivot_bunch_kaufman_rook(A_, n_, α, T)
         end
 
         ### Pivotage
@@ -287,7 +287,7 @@ function facto_LBL!(A::LowerTriangular, pivoting_strategy::Int=1)
     vec_P = collect(1:n)
     vec_2by2 = Int[]
 
-    alpha = abs(T((1 + sqrt(17))/8))
+    α = abs(T((1 + sqrt(17))/8))
     i_diagonal = 1
     while i_diagonal < n - 1
         ### Initialisation de la partie de A traitée
@@ -296,11 +296,11 @@ function facto_LBL!(A::LowerTriangular, pivoting_strategy::Int=1)
 
         ### Choix du pivot
         if pivoting_strategy === 1
-            pivot1, pivot2 = choose_pivot_bunch_parlett(A_, n_, alpha, T)
+            pivot1, pivot2 = choose_pivot_bunch_parlett(A_, n_, α, T)
         elseif pivoting_strategy === 2
-            pivot1, pivot2 = choose_pivot_bunch_kaufman(A_, n_, alpha, T)
+            pivot1, pivot2 = choose_pivot_bunch_kaufman(A_, n_, α, T)
         elseif pivoting_strategy === 3
-            pivot1, pivot2 = choose_pivot_bunch_kaufman_rook(A_, n_, alpha, T)
+            pivot1, pivot2 = choose_pivot_bunch_kaufman_rook(A_, n_, α, T)
         end
 
         ### Pivotage
